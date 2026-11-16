@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v8 真機測試</title><style>
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v9 真機測試</title><style>
 body{font-family:sans-serif;margin:16px}
 
         :root { --on-gold:#6F4A26; --gold-sel:#E8BC60; --gold-sel-l:#F2D48C; --cream:#FAF6ED; --card:#FFFDF8; --gold:#B7791F; --gold-l:#D9A441; --line:#D8CFC0;
@@ -655,7 +655,7 @@ body{font-family:sans-serif;margin:16px}
 
 #testlog{margin:12px 0;padding:10px;border:1px solid #999;border-radius:8px;background:#f7f7f7;font-size:14px;line-height:1.8;white-space:pre-wrap}
 </style></head><body>
-<h2>Reader v8 真機測試（真版 2025 秋：156 頁、書籤 15 條；目錄表在第 3、4 頁；手動鏈接層）</h2>
+<h2>Reader v9 真機測試（真版 2025 秋：156 頁、書籤 15 條；目錄表在第 3、4 頁；手動鏈接層；翻頁鎖＋縮放等排版）</h2>
 <div id="testlog">測試開始…</div>
 <div class="qxpdf-bar">
   <button type="button" id="qxpdfTocBtn">目录</button>
@@ -712,6 +712,13 @@ body{font-family:sans-serif;margin:16px}
   var pdfDoc = null, numPages = 0, zoom = 1, curPage = 1;
   var pageDivs = [], rendered = {}, tocLinks = [];
   var vp1W = 0, vp1H = 0;
+  
+  var navLock = false, navTimer = null;
+  function lockNav(){
+    navLock = true;
+    if (navTimer) { clearTimeout(navTimer); }
+    navTimer = setTimeout(function(){ navLock = false; }, 300);
+  }
   
   function pageWidth(){
     var w = main.clientWidth - 32;
@@ -810,6 +817,7 @@ body{font-family:sans-serif;margin:16px}
     });
   }, {root: main, rootMargin: '800px 0px'});
   function markCurrent(){
+    if (navLock) { return; }
     var top = main.scrollTop + 10, cur = 1;
     pageDivs.forEach(function(div, i){
       if (div.offsetTop <= top) { cur = i + 1; }
@@ -832,7 +840,11 @@ body{font-family:sans-serif;margin:16px}
     if (n < 1) { n = 1; }
     if (n > numPages) { n = numPages; }
     curPage = n;
+    lockNav();
+    
     renderPage(n);
+    if (n > 1) { renderPage(n - 1); }
+    if (n < numPages) { renderPage(n + 1); }
     var div = pageDivs[n - 1];
     if (div) { main.scrollTop = div.offsetTop - 16; }
     updateCurrentUI();
@@ -846,7 +858,10 @@ body{font-family:sans-serif;margin:16px}
     clearRendered();
     updatePageWidths();
     wasRendered.forEach(function(n){ renderPage(n); });
-    gotoPage(curPage);
+    
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ gotoPage(curPage); });
+    });
   }
   document.getElementById('qxpdfZoomIn').addEventListener('click', function(){ setZoom(zoom * 1.25); });
   document.getElementById('qxpdfZoomOut').addEventListener('click', function(){ setZoom(zoom / 1.25); });
@@ -858,7 +873,9 @@ body{font-family:sans-serif;margin:16px}
       clearRendered();
       updatePageWidths();
       wasRendered.forEach(function(n){ renderPage(n); });
-      gotoPage(curPage);
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ gotoPage(curPage); });
+      });
     }, 200);
   });
   function destToPage(dest){
@@ -992,11 +1009,6 @@ body{font-family:sans-serif;margin:16px}
       clearInterval(t1);
     }
   }, 500);
-  setTimeout(function(){
-    var info = document.getElementById('qxpdfPageInfo');
-    say('頁碼顯示：' + (info ? info.textContent : '(無)'));
-    say('縮放顯示：' + (document.getElementById('qxpdfZoomInfo') || {}).textContent);
-  }, 8000);
 })();
 </script>
 </body></html>
