@@ -655,7 +655,7 @@ body{font-family:sans-serif;margin:16px}
 
 #testlog{margin:12px 0;padding:10px;border:1px solid #999;border-radius:8px;background:#f7f7f7;font-size:14px;line-height:1.8;white-space:pre-wrap}
 </style></head><body>
-<h2>Reader v6 真機測試（測試 PDF：5 頁、書籤 3 條含子項、第 2 頁 2 個鏈接）</h2>
+<h2>Reader v6 真機測試（真版 2025 秋：156 頁、書籤 15 條）</h2>
 <div id="testlog">測試開始…</div>
 <div class="qxpdf-bar">
   <button type="button" id="qxpdfTocBtn">目录</button>
@@ -688,7 +688,7 @@ body{font-family:sans-serif;margin:16px}
   var zoomInfo = document.getElementById('qxpdfZoomInfo');
   var params = new URLSearchParams(window.location.search);
   var issue = params.get('issue') || '2026-fall';
-  var fileUrl = 'data:application/pdf;base64,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';
+  var fileUrl = 'pdf/CCCA_Magazine_Perfect_Bookmarks_compressed.pdf';
   
   body.addEventListener('contextmenu', function(ev){ ev.preventDefault(); });
   function toggleSide(){
@@ -942,10 +942,10 @@ body{font-family:sans-serif;margin:16px}
     }
   }, 500);
   setTimeout(function(){
-    var p3 = document.querySelector('.qxpdf-page[data-page="2"]');
+    var p3 = document.querySelector('.qxpdf-page[data-page="3"]');
     var layer = p3 ? p3.querySelector('.annotationLayer') : null;
     var la = layer ? layer.querySelectorAll('a').length : 0;
-    say('第 2 頁 annotation 層 <a> 數：' + la);
+    say('第 3 頁（目錄頁）annotation 層 <a> 數：' + la);
     var info = document.getElementById('qxpdfPageInfo');
     say('頁碼顯示：' + (info ? info.textContent : '(無)'));
     say('縮放顯示：' + (document.getElementById('qxpdfZoomInfo') || {}).textContent);
