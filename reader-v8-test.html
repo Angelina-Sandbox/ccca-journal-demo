@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v10 真機測試</title><style>
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v11 真機測試（瀏覽器端去頁）</title><style>
 body{font-family:sans-serif;margin:16px}
 
         :root { --on-gold:#6F4A26; --gold-sel:#E8BC60; --gold-sel-l:#F2D48C; --cream:#FAF6ED; --card:#FFFDF8; --gold:#B7791F; --gold-l:#D9A441; --line:#D8CFC0;
@@ -641,7 +641,7 @@ body{font-family:sans-serif;margin:16px}
 .qxpdf-status{text-align:center;color:var(--muted);font-size:14px;line-height:2;padding:24px 0}
 .qxpdf-page{position:relative;margin:0 auto 16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
 .qxpdf-page canvas{display:block;width:100%;height:auto}
-.qxpdf-page .annotationLayer{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;pointer-events:none}
+.qxpdf-page .annotationLayer{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:2}
 .qxpdf-page .annotationLayer .linkAnnotation{position:absolute;pointer-events:auto}
 .qxpdf-page .annotationLayer .linkAnnotation>a{position:absolute;top:0;left:0;width:100%;height:100%;display:block;background:transparent;cursor:pointer}
 .qxpdf-page .annotationLayer .linkAnnotation>a:hover{background:rgba(255,215,0,.18)}
@@ -655,7 +655,7 @@ body{font-family:sans-serif;margin:16px}
 
 #testlog{margin:12px 0;padding:10px;border:1px solid #999;border-radius:8px;background:#f7f7f7;font-size:14px;line-height:1.8;white-space:pre-wrap}
 </style></head><body>
-<h2>Reader v10 真機測試（全屏版：無導航、無標題、印刷頁碼、游標小手）</h2>
+<h2>Reader v11 真機測試（瀏覽器端動態去頁：第 8、9、10 頁；153 頁；全屏版）</h2>
 <div id="testlog">測試開始…</div>
 <div class="qxpdf-bar">
   <button type="button" id="qxpdfTocBtn">目录</button>
@@ -678,6 +678,10 @@ body{font-family:sans-serif;margin:16px}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+// 測試：瀏覽器端先去掉第 8、9、10 頁（會長/校長/家長會長的話），再顯示
+window.QX_REMOVE_PAGES = [8, 9, 10];
+</script>
 <script>
 
 (function(){
@@ -834,7 +838,8 @@ body{font-family:sans-serif;margin:16px}
     updateCurrentUI();
   }
   function updateCurrentUI(){
-    pageInfo.textContent = '第 ' + displayPage(curPage) + ' / ' + displayPage(numPages) + ' 頁';
+    
+    pageInfo.textContent = '第 ' + displayPage(curPage) + ' / ' + numPages + ' 頁';
     tocLinks.forEach(function(a){
       a.classList.toggle('on', parseInt(a.getAttribute('data-page'), 10) === curPage);
     });
@@ -860,6 +865,7 @@ body{font-family:sans-serif;margin:16px}
   document.getElementById('qxpdfPrev').addEventListener('click', function(){ gotoPage(curPage - 1); });
   document.getElementById('qxpdfNext').addEventListener('click', function(){ gotoPage(curPage + 1); });
   function setZoom(z){
+    var stayPage = curPage;
     zoom = Math.min(3, Math.max(0.5, z));
     zoomInfo.textContent = Math.round(zoom * 100) + '%';
     var wasRendered = Object.keys(rendered).map(function(k){ return parseInt(k, 10); });
@@ -867,8 +873,9 @@ body{font-family:sans-serif;margin:16px}
     updatePageWidths();
     wasRendered.forEach(function(n){ renderPage(n); });
     
+    
     requestAnimationFrame(function(){
-      requestAnimationFrame(function(){ gotoPage(curPage); });
+      requestAnimationFrame(function(){ gotoPage(stayPage); });
     });
   }
   document.getElementById('qxpdfZoomIn').addEventListener('click', function(){ setZoom(zoom * 1.25); });
@@ -877,12 +884,13 @@ body{font-family:sans-serif;margin:16px}
   window.addEventListener('resize', function(){
     if (resizeTimer) { clearTimeout(resizeTimer); }
     resizeTimer = setTimeout(function(){
+      var stayPage = curPage;
       var wasRendered = Object.keys(rendered).map(function(k){ return parseInt(k, 10); });
       clearRendered();
       updatePageWidths();
       wasRendered.forEach(function(n){ renderPage(n); });
       requestAnimationFrame(function(){
-        requestAnimationFrame(function(){ gotoPage(curPage); });
+        requestAnimationFrame(function(){ gotoPage(stayPage); });
       });
     }, 200);
   });
@@ -951,7 +959,51 @@ body{font-family:sans-serif;margin:16px}
       tocBox.textContent = '本期 PDF 没有目录书签。';
     });
   }
-  pdfjsLib.getDocument({url: fileUrl}).promise.then(function(doc){
+  
+  
+  
+  
+  function getRemovePages(){
+    if (window.QX_REMOVE_PAGES && window.QX_REMOVE_PAGES.length) {
+      return window.QX_REMOVE_PAGES.slice();
+    }
+    var r = params.get('remove');
+    if (r) {
+      return r.split(',').map(function(s){ return parseInt(s, 10); }).filter(function(n){ return n > 0; });
+    }
+    return null;
+  }
+  function loadPdfLib(){
+    return new Promise(function(resolve, reject){
+      if (window.PDFLib) { resolve(window.PDFLib); return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+      s.onload = function(){ resolve(window.PDFLib); };
+      s.onerror = function(){ reject(new Error('pdf-lib 載入失敗')); };
+      document.head.appendChild(s);
+    });
+  }
+  function fetchAndRemove(url, removePages){
+    return fetch(url).then(function(resp){
+      if (!resp.ok) { throw new Error('PDF 下載失敗 HTTP ' + resp.status); }
+      return resp.arrayBuffer();
+    }).then(function(buf){
+      return loadPdfLib().then(function(PDFLib){
+        return PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }).then(function(doc){
+          var sorted = removePages.slice().sort(function(a, b){ return b - a; });
+          sorted.forEach(function(p){ if (p >= 1 && p <= doc.getPageCount()) { doc.removePage(p - 1); } });
+          return doc.save();
+        });
+      });
+    }).then(function(bytes){
+      return pdfjsLib.getDocument({data: bytes}).promise;
+    });
+  }
+  var removePages = getRemovePages();
+  var docPromise = removePages
+    ? fetchAndRemove(fileUrl, removePages)
+    : pdfjsLib.getDocument({url: fileUrl}).promise;
+  docPromise.then(function(doc){
     pdfDoc = doc;
     numPages = doc.numPages;
     statusBox.style.display = 'none';
@@ -1011,8 +1063,7 @@ body{font-family:sans-serif;margin:16px}
   setTimeout(function(){
     var info = document.getElementById('qxpdfPageInfo');
     say('工具列頁碼：' + (info ? info.textContent : '(無)'));
-    say('主欄高度：' + (document.getElementById('qxpdfMain') || {}).style.height);
-  }, 8000);
+  }, 10000);
 })();
 </script>
 </body></html>
