@@ -1,6 +1,7 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v12 測試</title><style>
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v13 測試</title><style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--line:#E5DCC8;--muted:#8A7B66;--gold-sel:#E8BC60;--on-gold:#6F4A26;--title-c:#3A2E22}
-body{font-family:sans-serif;margin:4px;background:var(--cream);color:var(--brown)}
+body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
+.wrap{max-width:920px;margin:0 auto;padding:12px 24px 64px}
 
         :root { --on-gold:#6F4A26; --gold-sel:#E8BC60; --gold-sel-l:#F2D48C; --cream:#FAF6ED; --card:#FFFDF8; --gold:#B7791F; --gold-l:#D9A441; --line:#D8CFC0;
                 --blue:#3E5F8A; --brown:#4A3728; --muted:#A08B74; --title-c:#6F4A26; }
@@ -581,6 +582,7 @@ body{font-family:sans-serif;margin:4px;background:var(--cream);color:var(--brown
 .qxpdf-main{height:calc(100vh - 150px)!important}
 #testlog{margin:0 0 4px;padding:2px 8px;border:1px solid #ccc;border-radius:6px;background:#f7f7f7;font-size:11px;line-height:1.5;white-space:pre-wrap}
 </style></head><body>
+<div class="wrap">
 <header class="site-head">
         <div class="mast-left">
             <div class="masthead">
@@ -619,6 +621,7 @@ body{font-family:sans-serif;margin:4px;background:var(--cream);color:var(--brown
   </div>
 </div>
 
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 window.QX_REMOVE_PAGES = [8, 9, 10];
@@ -701,9 +704,11 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   function renderPage(n){
     if (rendered[n]) { return; }
     rendered[n] = true;
+    var myGen = renderGen;
     var div = pageDivs[n - 1];
     if (!div) { return; }
     pdfDoc.getPage(n).then(function(page){
+      if (myGen !== renderGen) { return; } 
       var dpr = window.devicePixelRatio || 1;
       var vp1 = page.getViewport({scale: 1});
       var scale = pageWidth() / vp1.width;
@@ -714,6 +719,7 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
       div.appendChild(canvas);
       page.render({canvasContext: canvas.getContext('2d'), viewport: rvp});
       page.getAnnotations().then(function(annotations){
+        if (myGen !== renderGen) { return; } 
         if (!annotations || !annotations.length) { return; }
         var layerDiv = document.createElement('div');
         layerDiv.className = 'annotationLayer';
@@ -757,7 +763,9 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
       });
     });
   }
+  var renderGen = 0; 
   function clearRendered(){
+    renderGen++;
     rendered = {};
     pageDivs.forEach(function(div){ div.innerHTML = ''; });
   }
@@ -819,7 +827,7 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   document.getElementById('qxpdfNext').addEventListener('click', function(){ gotoPage(curPage + 1); });
   function setZoom(z){
     var stayPage = curPage;
-    zoom = Math.min(3, Math.max(0.5, z));
+    zoom = Math.min(2, Math.max(0.5, z));
     zoomInfo.textContent = Math.round(zoom * 100) + '%';
     var wasRendered = Object.keys(rendered).map(function(k){ return parseInt(k, 10); });
     clearRendered();
