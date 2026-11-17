@@ -689,6 +689,7 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   window.addEventListener('resize', fitViewerHeight);
   window.addEventListener('load', fitViewerHeight);
   fitViewerHeight();
+  function pageWidth(){
     var w = main.clientWidth - 32;
     if (w < 100) { w = 300; }
     return Math.round(w * zoom);
