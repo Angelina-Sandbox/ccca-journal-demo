@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v13 測試</title><style>
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v14 測試</title><style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--line:#E5DCC8;--muted:#8A7B66;--gold-sel:#E8BC60;--on-gold:#6F4A26;--title-c:#3A2E22}
 body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .wrap{max-width:920px;margin:0 auto;padding:12px 24px 64px}
@@ -561,6 +561,7 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .qxpdf-toc a.on{color:var(--gold);font-weight:bold;border-left:3px solid var(--gold);padding-left:8px}
 .qxpdf-toc .lvl1{padding-left:16px}
 .qxpdf-main{flex:1;min-width:0;position:relative;background:var(--cream);border:1px solid var(--line);border-radius:12px;height:calc(100vh - 190px);overflow-y:auto;overflow-x:auto;padding:16px}
+#qxpdfPages{width:max-content;min-width:100%;margin:0 auto}
 .qxpdf-status{text-align:center;color:var(--muted);font-size:14px;line-height:2;padding:24px 0}
 .qxpdf-page{position:relative;margin:0 auto 16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
 .qxpdf-page canvas{display:block;width:100%;height:auto}
@@ -825,6 +826,8 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   }
   document.getElementById('qxpdfPrev').addEventListener('click', function(){ gotoPage(curPage - 1); });
   document.getElementById('qxpdfNext').addEventListener('click', function(){ gotoPage(curPage + 1); });
+  
+  var ZOOM_STEPS = [0.5, 0.625, 0.8, 1, 1.25, 1.5625, 2];
   function setZoom(z){
     var stayPage = curPage;
     zoom = Math.min(2, Math.max(0.5, z));
@@ -839,8 +842,19 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
       requestAnimationFrame(function(){ gotoPage(stayPage); });
     });
   }
-  document.getElementById('qxpdfZoomIn').addEventListener('click', function(){ setZoom(zoom * 1.25); });
-  document.getElementById('qxpdfZoomOut').addEventListener('click', function(){ setZoom(zoom / 1.25); });
+  function zoomStep(dir){
+    var idx = 0, best = Infinity;
+    ZOOM_STEPS.forEach(function(s, i){
+      var d = Math.abs(s - zoom);
+      if (d < best) { best = d; idx = i; }
+    });
+    var next = idx + dir;
+    if (next < 0) { next = 0; }
+    if (next >= ZOOM_STEPS.length) { next = ZOOM_STEPS.length - 1; }
+    setZoom(ZOOM_STEPS[next]);
+  }
+  document.getElementById('qxpdfZoomIn').addEventListener('click', function(){ zoomStep(1); });
+  document.getElementById('qxpdfZoomOut').addEventListener('click', function(){ zoomStep(-1); });
   var resizeTimer = null;
   window.addEventListener('resize', function(){
     if (resizeTimer) { clearTimeout(resizeTimer); }
