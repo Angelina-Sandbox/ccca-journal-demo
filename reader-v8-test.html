@@ -579,7 +579,7 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 
 .main-nav{display:none!important}
 .qxpdf-bar{margin:0 0 6px}
-#testlog{margin:0 0 4px;padding:2px 8px;border:1px solid #ccc;border-radius:6px;background:#f7f7f7;font-size:11px;line-height:1.5;white-space:pre-wrap}
+#testlog{margin:0 0 4px;padding:2px 8px;border:1px solid #ccc;border-radius:6px;background:#f7f7f7;font-size:11px;line-height:1.5;white-space:pre-wrap;height:54px;overflow:auto}
 </style></head><body>
 <div class="wrap">
 <header class="site-head">
@@ -621,11 +621,9 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 </div>
 
 </div>
-<script>
-window.QX_REMOVE_PAGES = [8, 9, 10];
-</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
+window.QX_REMOVE_PAGES = [8, 9, 10];
 
 (function(){
   var body = document.getElementById('qxpdfBody');
@@ -638,7 +636,7 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   var zoomInfo = document.getElementById('qxpdfZoomInfo');
   var params = new URLSearchParams(window.location.search);
   var issue = params.get('issue') || '2026-fall';
-  var fileUrl = 'pdf/CCCA_Magazine_Perfect_Bookmarks_compressed.pdf';
+  var fileUrl = '/api/reader-pdf?issue=' + encodeURIComponent(issue) + '&v=15';
   
   body.addEventListener('contextmenu', function(ev){ ev.preventDefault(); });
   function toggleSide(){
