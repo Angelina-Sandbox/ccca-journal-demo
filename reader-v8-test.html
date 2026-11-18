@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v18 手機測試</title><style>
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v19 手機測試</title><style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--line:#E5DCC8;--muted:#8A7B66;--gold-sel:#E8BC60;--on-gold:#6F4A26;--title-c:#3A2E22}
 body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .wrap{max-width:920px;margin:0 auto;padding:12px 24px 64px}
@@ -560,7 +560,14 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .qxpdf-toc a:hover{color:var(--gold);text-decoration:underline}
 .qxpdf-toc a.on{color:var(--gold);font-weight:bold;border-left:3px solid var(--gold);padding-left:8px}
 .qxpdf-toc .lvl1{padding-left:16px}
-.qxpdf-main{flex:1;min-width:0;position:relative;background:var(--cream);border:1px solid var(--line);border-radius:12px;height:calc(100vh - 190px);overflow-y:auto;overflow-x:auto;padding:16px;touch-action:pan-x pan-y}
+.qxpdf-main{flex:1;min-width:0;position:relative;background:var(--cream);border:1px solid var(--line);border-radius:12px;height:calc(100vh - 190px);overflow-y:auto;overflow-x:auto;padding:16px;touch-action:pan-x pan-y;scrollbar-width:thin;scrollbar-color:var(--line) var(--card)}
+.qxpdf-main::-webkit-scrollbar{width:10px;height:10px}
+.qxpdf-main::-webkit-scrollbar-track{background:var(--card)}
+.qxpdf-main::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;border:2px solid var(--card)}
+.qxpdf-side{scrollbar-width:thin;scrollbar-color:var(--line) var(--card)}
+.qxpdf-side::-webkit-scrollbar{width:10px}
+.qxpdf-side::-webkit-scrollbar-track{background:var(--card)}
+.qxpdf-side::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;border:2px solid var(--card)}
 #qxpdfPages{width:max-content;min-width:100%;margin:0 auto}
 .qxpdf-status{text-align:center;color:var(--muted);font-size:14px;line-height:2;padding:24px 0}
 .qxpdf-page{position:relative;margin:0 auto 16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
@@ -579,7 +586,10 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
   @keyframes qxPdfSideIn { from { transform:translateX(-100%); } to { transform:translateX(0); } }
   .qxpdf-scrim{display:none}
   .qxpdf-body:not(.qxpdf-sideclosed) .qxpdf-scrim{display:block;position:fixed;inset:0;z-index:55;background:rgba(30,22,12,.38)}
-  .qxpdf-main{height:70vh}
+  .qxpdf-main{height:70vh;scrollbar-width:none}
+  .qxpdf-main::-webkit-scrollbar{display:none}
+  .qxpdf-side{scrollbar-width:none}
+  .qxpdf-side::-webkit-scrollbar{display:none}
 }
 
 .main-nav{display:none!important}
@@ -852,10 +862,11 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   document.getElementById('qxpdfPrev').addEventListener('click', function(){ gotoPage(curPage - 1); });
   document.getElementById('qxpdfNext').addEventListener('click', function(){ gotoPage(curPage + 1); });
   
-  var ZOOM_STEPS = [0.5, 0.625, 0.8, 1, 1.25, 1.5625, 2];
+  var ZOOM_STEPS = [0.5, 0.625, 0.8, 1, 1.25, 1.5625, 2, 2.5, 3];
+  function maxZoom(){ return window.innerWidth <= 700 ? 3 : 2; }
   function setZoom(z){
     var stayPage = curPage;
-    zoom = Math.min(2, Math.max(0.5, z));
+    zoom = Math.min(maxZoom(), Math.max(0.5, z));
     zoomInfo.textContent = Math.round(zoom * 100) + '%';
     var wasRendered = Object.keys(rendered).map(function(k){ return parseInt(k, 10); });
     clearRendered();
@@ -876,6 +887,7 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
     var next = idx + dir;
     if (next < 0) { next = 0; }
     if (next >= ZOOM_STEPS.length) { next = ZOOM_STEPS.length - 1; }
+    while (ZOOM_STEPS[next] > maxZoom() && next > 0) { next--; }
     setZoom(ZOOM_STEPS[next]);
   }
   document.getElementById('qxpdfZoomIn').addEventListener('click', function(){ zoomStep(1); });
@@ -899,7 +911,7 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
     e.preventDefault();
     var d = pinchDist(e.touches);
     if (pinchStartDist > 0) {
-      var z = Math.min(2, Math.max(0.5, pinchStartZoom * d / pinchStartDist));
+      var z = Math.min(maxZoom(), Math.max(0.5, pinchStartZoom * d / pinchStartDist));
       zoom = z;
       zoomInfo.textContent = Math.round(zoom * 100) + '%';
       updatePageWidths();
