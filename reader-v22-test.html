@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v22 桌面測試</title><style>
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v24 手機高度測試</title><style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--line:#E5DCC8;--muted:#8A7B66;--gold-sel:#E8BC60;--on-gold:#6F4A26;--title-c:#3A2E22}
 body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .wrap{max-width:920px;margin:0 auto;padding:12px 24px 64px}
@@ -552,9 +552,11 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .qxpdf-bar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:0 0 10px;padding:10px 12px 0}
 .qxpdf-bar-left{display:flex;gap:10px;align-items:center;min-width:0}
 .qxpdf-title{font-size:14px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.qxpdf-bar-center{display:flex;gap:8px;align-items:center}
+.qxpdf-bar-center{display:flex;gap:28px;align-items:center}
+.qxpdf-bar-pages{display:flex;gap:8px;align-items:center}
+.qxpdf-bar-zoom{display:flex;gap:8px;align-items:center}
 .qxpdf-bar-right{}
-.qxpdf-bar button{font-size:12px;line-height:1;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:999px;padding:2px 9px;cursor:pointer;text-decoration:none}
+.qxpdf-bar button{font-size:15px;font-weight:700;line-height:1;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:999px;padding:2px 10px;cursor:pointer;text-decoration:none}
 .qxpdf-bar button:hover{background:var(--gold);color:#fff;text-decoration:none}
 .qxpdf-pageinfo{font-size:14px;color:var(--muted);margin:0 4px}
 .qxpdf-body{display:flex;gap:16px;align-items:flex-start;padding:0 12px 16px}
@@ -586,13 +588,17 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 @media (max-width:700px){
   .qxpdf-body{display:block}
   .qxpdf-bar{grid-template-columns:1fr auto 1fr;overflow-x:auto;gap:6px;padding-bottom:2px}
+  .qxpdf-bar button{font-size:12px;font-weight:400;padding:2px 9px}
+  .qxpdf-bar-center{gap:6px}
+  .qxpdf-bar-pages,.qxpdf-bar-zoom{gap:6px}
+  .qxpdf-title{display:none}
   .qxpdf-pageinfo{font-size:12px;margin:0 2px}
   .qxpdf-side{position:fixed;left:0;top:0;bottom:0;width:max-content;min-width:220px;max-width:min(85vw,320px);max-height:none;border-radius:0;z-index:60;box-shadow:4px 0 24px rgba(0,0,0,.25);display:none}
   .qxpdf-body:not(.qxpdf-sideclosed) .qxpdf-side{display:block;animation:qxPdfSideIn .22s ease-out}
   @keyframes qxPdfSideIn { from { transform:translateX(-100%); } to { transform:translateX(0); } }
   .qxpdf-scrim{display:none}
   .qxpdf-body:not(.qxpdf-sideclosed) .qxpdf-scrim{display:block;position:fixed;inset:0;z-index:55;background:rgba(30,22,12,.38)}
-  .qxpdf-main{height:70vh;scrollbar-width:none}
+  .qxpdf-main{height:calc(100dvh - 60px);scrollbar-width:none}
   .qxpdf-main::-webkit-scrollbar{display:none}
   .qxpdf-side{scrollbar-width:none}
   .qxpdf-side::-webkit-scrollbar{display:none}
@@ -627,12 +633,16 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
     <span class="qxpdf-title" id="qxpdfTitle">整本雜誌</span>
   </span>
   <span class="qxpdf-bar-center">
-    <button type="button" id="qxpdfPrev" aria-label="上一页">←</button>
-    <span class="qxpdf-pageinfo" id="qxpdfPageInfo">1 / —</span>
-    <button type="button" id="qxpdfNext" aria-label="下一页">→</button>
-    <button type="button" id="qxpdfZoomOut" aria-label="缩小">−</button>
-    <span class="qxpdf-pageinfo" id="qxpdfZoomInfo">100%</span>
-    <button type="button" id="qxpdfZoomIn" aria-label="放大">+</button>
+    <span class="qxpdf-bar-pages">
+      <button type="button" id="qxpdfPrev" aria-label="上一页">←</button>
+      <span class="qxpdf-pageinfo" id="qxpdfPageInfo">1 / —</span>
+      <button type="button" id="qxpdfNext" aria-label="下一页">→</button>
+    </span>
+    <span class="qxpdf-bar-zoom">
+      <button type="button" id="qxpdfZoomOut" aria-label="缩小">−</button>
+      <span class="qxpdf-pageinfo" id="qxpdfZoomInfo">100%</span>
+      <button type="button" id="qxpdfZoomIn" aria-label="放大">+</button>
+    </span>
   </span>
   <span class="qxpdf-bar-right"></span>
 </div>
@@ -726,6 +736,7 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   }
   window.addEventListener('resize', fitViewerHeight);
   window.addEventListener('load', fitViewerHeight);
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitViewerHeight); }
   fitViewerHeight();
   function pageWidth(){
     var w = main.clientWidth - 32;
@@ -1188,12 +1199,13 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   setTimeout(function(){
     var info = document.getElementById('qxpdfPageInfo');
     say('工具列頁碼：' + (info ? info.textContent : '(無)'));
-    var head = document.querySelector('.site-head');
-    say('刊頭顯示：' + (head ? getComputedStyle(head).display : '(無)'));
+    var main = document.getElementById('qxpdfMain');
+    if (main) {
+      var r = main.getBoundingClientRect();
+      say('檢視器高：' + Math.round(r.height) + 'px；底邊距視窗底：' + Math.round(window.innerHeight - r.bottom) + 'px；視窗高：' + window.innerHeight + 'px');
+    }
     var title = document.getElementById('qxpdfTitle');
-    say('PDF 標題：' + (title ? title.textContent : '(無)'));
-    var bar = document.querySelector('.qxpdf-bar');
-    if (bar) say('工具列寬度：' + Math.round(bar.getBoundingClientRect().width) + 'px；視窗寬：' + window.innerWidth + 'px');
+    say('PDF 標題：' + (title ? title.textContent : '(無)') + '；標題顯示：' + (title ? getComputedStyle(title).display : '(無)'));
   }, 15000);
 })();
 </script>
