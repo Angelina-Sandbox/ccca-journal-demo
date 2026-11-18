@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v15 測試</title><style>
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v16 手機測試</title><style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--line:#E5DCC8;--muted:#8A7B66;--gold-sel:#E8BC60;--on-gold:#6F4A26;--title-c:#3A2E22}
 body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .wrap{max-width:920px;margin:0 auto;padding:12px 24px 64px}
@@ -548,7 +548,7 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .main-nav{display:none !important}
 .qxpdf-note{text-align:center;color:var(--muted);font-size:14px;margin:-8px 0 14px}
 .qxpdf-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px}
-.qxpdf-bar button{font-size:12px;line-height:1;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:999px;padding:7px 12px;cursor:pointer;text-decoration:none}
+.qxpdf-bar button{font-size:12px;line-height:1;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:999px;padding:2px 9px;cursor:pointer;text-decoration:none}
 .qxpdf-bar button:hover{background:var(--gold);color:#fff;text-decoration:none}
 .qxpdf-pageinfo{font-size:14px;color:var(--muted);margin:0 4px}
 .qxpdf-body{display:flex;gap:16px;align-items:flex-start}
@@ -572,8 +572,12 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .qxpdf-body.qxpdf-sideclosed .qxpdf-side{display:none}
 @media (max-width:700px){
   .qxpdf-body{display:block}
-  .qxpdf-side{position:fixed;left:0;top:0;bottom:0;width:280px;max-height:none;border-radius:0;z-index:60;box-shadow:4px 0 24px rgba(0,0,0,.25)}
+  .qxpdf-bar{flex-wrap:nowrap;overflow-x:auto;gap:6px;padding-bottom:2px}
+  .qxpdf-pageinfo{font-size:12px;margin:0 2px}
+  .qxpdf-side{position:fixed;left:0;top:0;bottom:0;width:min(80vw,320px);max-height:none;border-radius:0;z-index:60;box-shadow:4px 0 24px rgba(0,0,0,.25);transition:transform .22s ease-out}
   .qxpdf-body.qxpdf-sideclosed .qxpdf-side{transform:translateX(-105%)}
+  .qxpdf-scrim{display:none}
+  .qxpdf-body:not(.qxpdf-sideclosed) .qxpdf-scrim{display:block;position:fixed;inset:0;z-index:55;background:rgba(30,22,12,.38)}
   .qxpdf-main{height:70vh}
 }
 
@@ -609,11 +613,12 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
   <span class="qxpdf-pageinfo" id="qxpdfZoomInfo">100%</span>
   <button type="button" id="qxpdfZoomIn">放大</button>
 </div>
-<div class="qxpdf-body" id="qxpdfBody" data-qxpdf="reader-v1">
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v1">
   <aside class="qxpdf-side" id="qxpdfSide">
     <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
     <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
   </aside>
+  <div class="qxpdf-scrim" id="qxpdfScrim"></div>
   <div class="qxpdf-main" id="qxpdfMain">
     <div class="qxpdf-status" id="qxpdfStatus">正在打开…</div>
     <div id="qxpdfPages"></div>
@@ -628,6 +633,9 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
 (function(){
   var body = document.getElementById('qxpdfBody');
   var side = document.getElementById('qxpdfSide');
+  var scrim = document.getElementById('qxpdfScrim');
+  
+  if (window.innerWidth > 700) { body.classList.remove('qxpdf-sideclosed'); }
   var tocBox = document.getElementById('qxpdfToc');
   var main = document.getElementById('qxpdfMain');
   var pagesBox = document.getElementById('qxpdfPages');
@@ -639,11 +647,19 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   var fileUrl = 'pdf/CCCA_Magazine_Perfect_Bookmarks_compressed.pdf';
   
   body.addEventListener('contextmenu', function(ev){ ev.preventDefault(); });
+  function setSide(open){
+    body.classList.toggle('qxpdf-sideclosed', !open);
+    if (window.innerWidth <= 700) { document.body.style.overflow = open ? 'hidden' : ''; }
+  }
   function toggleSide(){
-    body.classList.toggle('qxpdf-sideclosed');
+    setSide(body.classList.contains('qxpdf-sideclosed'));
   }
   document.getElementById('qxpdfTocBtn').addEventListener('click', toggleSide);
-  document.getElementById('qxpdfSideClose').addEventListener('click', toggleSide);
+  document.getElementById('qxpdfSideClose').addEventListener('click', function(){ setSide(false); });
+  if (scrim) { scrim.addEventListener('click', function(){ setSide(false); }); }
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !body.classList.contains('qxpdf-sideclosed')) { setSide(false); }
+  });
   function fail(msg){
     statusBox.style.display = 'block';
     statusBox.textContent = msg;
@@ -903,7 +919,7 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
           el.addEventListener('click', function(ev){
             ev.preventDefault();
             gotoPage(pg);
-            if (window.innerWidth <= 700) { body.classList.add('qxpdf-sideclosed'); }
+            if (window.innerWidth <= 700) { setSide(false); }
           });
           tocLinks.push(el);
         } else {
@@ -1112,6 +1128,13 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   setTimeout(function(){
     var info = document.getElementById('qxpdfPageInfo');
     say('工具列頁碼：' + (info ? info.textContent : '(無)'));
+    var bar = document.querySelector('.qxpdf-bar');
+    if (bar) say('工具列高度：' + Math.round(bar.getBoundingClientRect().height) + 'px（一行約 22px，兩行約 48px）');
+    var side = document.getElementById('qxpdfSide');
+    if (side) {
+      var r = side.getBoundingClientRect();
+      say('目錄位置：left=' + Math.round(r.left) + ' top=' + Math.round(r.top) + '（收起時 left 應為負數＝在畫面外）');
+    }
   }, 15000);
 })();
 </script>
