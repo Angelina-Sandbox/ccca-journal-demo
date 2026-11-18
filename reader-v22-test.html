@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v24 手機高度測試</title><style>
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v25 無邊距測試</title><style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--line:#E5DCC8;--muted:#8A7B66;--gold-sel:#E8BC60;--on-gold:#6F4A26;--title-c:#3A2E22}
 body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .wrap{max-width:920px;margin:0 auto;padding:12px 24px 64px}
@@ -559,7 +559,7 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .qxpdf-bar button{font-size:15px;font-weight:700;line-height:1;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:999px;padding:2px 10px;cursor:pointer;text-decoration:none}
 .qxpdf-bar button:hover{background:var(--gold);color:#fff;text-decoration:none}
 .qxpdf-pageinfo{font-size:14px;color:var(--muted);margin:0 4px}
-.qxpdf-body{display:flex;gap:16px;align-items:flex-start;padding:0 12px 16px}
+.qxpdf-body{display:flex;gap:16px;align-items:flex-start;padding:0}
 .qxpdf-side{width:240px;flex:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px 16px;max-height:calc(100vh - 190px);overflow-y:auto}
 .qxpdf-side-head{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:bold;color:var(--title-c);margin-bottom:8px}
 .qxpdf-side-head button{border:none;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 2px}
@@ -568,7 +568,7 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .qxpdf-toc a:hover{color:var(--gold);text-decoration:underline}
 .qxpdf-toc a.on{color:var(--gold);font-weight:bold;border-left:3px solid var(--gold);padding-left:8px}
 .qxpdf-toc .lvl1{padding-left:16px}
-.qxpdf-main{flex:1;min-width:0;position:relative;background:var(--cream);border:1px solid var(--line);border-radius:12px;height:calc(100vh - 190px);overflow-y:auto;overflow-x:auto;padding:8px;touch-action:pan-x pan-y;scrollbar-width:thin;scrollbar-color:var(--gold) var(--card)}
+.qxpdf-main{flex:1;min-width:0;position:relative;background:var(--cream);border:1px solid var(--line);border-radius:0;height:calc(100vh - 190px);overflow-y:auto;overflow-x:auto;padding:0;touch-action:pan-x pan-y;scrollbar-width:thin;scrollbar-color:var(--gold) var(--card)}
 .qxpdf-main::-webkit-scrollbar{width:10px;height:10px}
 .qxpdf-main::-webkit-scrollbar-track{background:var(--card)}
 .qxpdf-main::-webkit-scrollbar-thumb{background:var(--gold);border-radius:6px;border:2px solid var(--card)}
@@ -598,7 +598,7 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
   @keyframes qxPdfSideIn { from { transform:translateX(-100%); } to { transform:translateX(0); } }
   .qxpdf-scrim{display:none}
   .qxpdf-body:not(.qxpdf-sideclosed) .qxpdf-scrim{display:block;position:fixed;inset:0;z-index:55;background:rgba(30,22,12,.38)}
-  .qxpdf-main{height:calc(100dvh - 60px);scrollbar-width:none}
+  .qxpdf-main{height:calc(100dvh - 40px);scrollbar-width:none}
   .qxpdf-main::-webkit-scrollbar{display:none}
   .qxpdf-side{scrollbar-width:none}
   .qxpdf-side::-webkit-scrollbar{display:none}
@@ -729,7 +729,7 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   
   function fitViewerHeight(){
     var r = main.getBoundingClientRect();
-    var h = window.innerHeight - r.top - 16;
+    var h = window.innerHeight - r.top;
     if (h < 300) { h = 300; }
     main.style.height = h + 'px';
     side.style.maxHeight = h + 'px';
@@ -739,7 +739,7 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitViewerHeight); }
   fitViewerHeight();
   function pageWidth(){
-    var w = main.clientWidth - 32;
+    var w = main.clientWidth;
     if (w < 100) { w = 300; }
     return Math.round(w * zoom);
   }
@@ -1202,10 +1202,10 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
     var main = document.getElementById('qxpdfMain');
     if (main) {
       var r = main.getBoundingClientRect();
-      say('檢視器高：' + Math.round(r.height) + 'px；底邊距視窗底：' + Math.round(window.innerHeight - r.bottom) + 'px；視窗高：' + window.innerHeight + 'px');
+      say('檢視器：左緣 ' + Math.round(r.left) + 'px，右緣距視窗右 ' + Math.round(window.innerWidth - r.right) + 'px，底邊距視窗底 ' + Math.round(window.innerHeight - r.bottom) + 'px；視窗寬 ' + window.innerWidth + 'px');
     }
-    var title = document.getElementById('qxpdfTitle');
-    say('PDF 標題：' + (title ? title.textContent : '(無)') + '；標題顯示：' + (title ? getComputedStyle(title).display : '(無)'));
+    var pg = document.querySelector('.qxpdf-page');
+    if (pg) say('第一頁寬：' + Math.round(pg.getBoundingClientRect().width) + 'px');
   }, 15000);
 })();
 </script>
