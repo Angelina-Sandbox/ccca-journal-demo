@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v25 無邊距測試</title><style>
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v27 側欄間距測試</title><style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--line:#E5DCC8;--muted:#8A7B66;--gold-sel:#E8BC60;--on-gold:#6F4A26;--title-c:#3A2E22}
 body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .wrap{max-width:920px;margin:0 auto;padding:12px 24px 64px}
@@ -559,8 +559,8 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .qxpdf-bar button{font-size:15px;font-weight:700;line-height:1;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:999px;padding:2px 10px;cursor:pointer;text-decoration:none}
 .qxpdf-bar button:hover{background:var(--gold);color:#fff;text-decoration:none}
 .qxpdf-pageinfo{font-size:14px;color:var(--muted);margin:0 4px}
-.qxpdf-body{display:flex;gap:16px;align-items:flex-start;padding:0}
-.qxpdf-side{width:240px;flex:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px 16px;max-height:calc(100vh - 190px);overflow-y:auto}
+.qxpdf-body{display:flex;gap:8px;align-items:flex-start;padding:0}
+.qxpdf-side{width:240px;flex:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px 16px;max-height:calc(100vh - 190px);overflow-y:auto;margin-left:2px}
 .qxpdf-side-head{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:bold;color:var(--title-c);margin-bottom:8px}
 .qxpdf-side-head button{border:none;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 2px}
 .qxpdf-toc{font-size:14px;line-height:1.9}
@@ -593,7 +593,7 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
   .qxpdf-bar-pages,.qxpdf-bar-zoom{gap:6px}
   .qxpdf-title{display:none}
   .qxpdf-pageinfo{font-size:12px;margin:0 2px}
-  .qxpdf-side{position:fixed;left:0;top:0;bottom:0;width:max-content;min-width:220px;max-width:min(85vw,320px);max-height:none;border-radius:0;z-index:60;box-shadow:4px 0 24px rgba(0,0,0,.25);display:none}
+  .qxpdf-side{position:fixed;left:0;top:0;bottom:0;width:max-content;min-width:220px;max-width:min(85vw,320px);max-height:none;border-radius:0;z-index:60;box-shadow:4px 0 24px rgba(0,0,0,.25);display:none;margin-left:0}
   .qxpdf-body:not(.qxpdf-sideclosed) .qxpdf-side{display:block;animation:qxPdfSideIn .22s ease-out}
   @keyframes qxPdfSideIn { from { transform:translateX(-100%); } to { transform:translateX(0); } }
   .qxpdf-scrim{display:none}
@@ -1199,13 +1199,15 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
   setTimeout(function(){
     var info = document.getElementById('qxpdfPageInfo');
     say('工具列頁碼：' + (info ? info.textContent : '(無)'));
+    var side = document.getElementById('qxpdfSide');
     var main = document.getElementById('qxpdfMain');
-    if (main) {
-      var r = main.getBoundingClientRect();
-      say('檢視器：左緣 ' + Math.round(r.left) + 'px，右緣距視窗右 ' + Math.round(window.innerWidth - r.right) + 'px，底邊距視窗底 ' + Math.round(window.innerHeight - r.bottom) + 'px；視窗寬 ' + window.innerWidth + 'px');
+    if (side && main) {
+      var sr = side.getBoundingClientRect();
+      var mr = main.getBoundingClientRect();
+      say('側欄：左緣 ' + Math.round(sr.left) + 'px，右緣 ' + Math.round(sr.right) + 'px，寬 ' + Math.round(sr.width) + 'px');
+      say('檢視器：左緣 ' + Math.round(mr.left) + 'px，底邊距視窗底 ' + Math.round(window.innerHeight - mr.bottom) + 'px');
+      say('側欄到檢視器空隙：' + Math.round(mr.left - sr.right) + 'px');
     }
-    var pg = document.querySelector('.qxpdf-page');
-    if (pg) say('第一頁寬：' + Math.round(pg.getBoundingClientRect().width) + 'px');
   }, 15000);
 })();
 </script>
