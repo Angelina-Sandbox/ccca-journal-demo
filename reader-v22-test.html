@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v29 側欄左8px＋縱捲軸加寬測試</title><style>
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader v30 側欄左10px＋捲軸回10px測試</title><style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--line:#E5DCC8;--muted:#8A7B66;--gold-sel:#E8BC60;--on-gold:#6F4A26;--title-c:#3A2E22}
 body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .wrap{max-width:920px;margin:0 auto;padding:12px 24px 64px}
@@ -560,7 +560,7 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .qxpdf-bar button:hover{background:var(--gold);color:#fff;text-decoration:none}
 .qxpdf-pageinfo{font-size:14px;color:var(--muted);margin:0 4px}
 .qxpdf-body{display:flex;gap:8px;align-items:flex-start;padding:0}
-.qxpdf-side{width:240px;flex:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px 16px;max-height:calc(100vh - 190px);overflow-y:auto;margin-left:8px}
+.qxpdf-side{width:240px;flex:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px 16px;max-height:calc(100vh - 190px);overflow-y:auto;margin-left:10px}
 .qxpdf-side-head{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:bold;color:var(--title-c);margin-bottom:8px}
 .qxpdf-side-head button{border:none;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 2px}
 .qxpdf-toc{font-size:14px;line-height:1.9}
@@ -569,11 +569,11 @@ body{font-family:sans-serif;margin:0;background:var(--cream);color:var(--brown)}
 .qxpdf-toc a.on{color:var(--gold);font-weight:bold;border-left:3px solid var(--gold);padding-left:8px}
 .qxpdf-toc .lvl1{padding-left:16px}
 .qxpdf-main{flex:1;min-width:0;position:relative;background:var(--cream);border:1px solid var(--line);border-radius:0;height:calc(100vh - 190px);overflow-y:auto;overflow-x:auto;padding:0;touch-action:pan-x pan-y;scrollbar-width:thin;scrollbar-color:var(--gold) var(--card)}
-.qxpdf-main::-webkit-scrollbar{width:14px;height:10px}
+.qxpdf-main::-webkit-scrollbar{width:10px;height:10px}
 .qxpdf-main::-webkit-scrollbar-track{background:var(--card)}
 .qxpdf-main::-webkit-scrollbar-thumb{background:var(--gold);border-radius:6px;border:2px solid var(--card)}
 .qxpdf-side{scrollbar-width:thin;scrollbar-color:var(--gold) var(--card)}
-.qxpdf-side::-webkit-scrollbar{width:14px}
+.qxpdf-side::-webkit-scrollbar{width:10px}
 .qxpdf-side::-webkit-scrollbar-track{background:var(--card)}
 .qxpdf-side::-webkit-scrollbar-thumb{background:var(--gold);border-radius:6px;border:2px solid var(--card)}
 #qxpdfPages{width:max-content;min-width:100%;margin:0 auto}
@@ -1207,8 +1207,6 @@ window.QX_REMOVE_PAGES = [8, 9, 10];
       say('側欄：左緣 ' + Math.round(sr.left) + 'px，右緣 ' + Math.round(sr.right) + 'px，寬 ' + Math.round(sr.width) + 'px');
       say('檢視器：左緣 ' + Math.round(mr.left) + 'px，底邊距視窗底 ' + Math.round(window.innerHeight - mr.bottom) + 'px');
       say('側欄到檢視器空隙：' + Math.round(mr.left - sr.right) + 'px');
-      var sbW = getComputedStyle(main, '::-webkit-scrollbar').width;
-      say('主捲軸寬（webkit 計算值）：' + sbW);
     }
   }, 15000);
 })();
