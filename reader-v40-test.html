@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Reader v47 捏合測試</title>
+<title>Reader v48 捏合測試</title>
 <style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--muted:#7A6A56;--line:#E4DCC8;--fp-line:#D8CDB2}
 body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
@@ -91,7 +91,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         <a class="util-saved" href="/saved.html"><svg width="8" height="10" viewBox="4.5 2.5 15 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>書籤</a>
     </div>
     </header>
-<div id="testlog">Reader v47 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
+<div id="testlog">Reader v48 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
 <div class="qxpdf-bar">
   <span class="qxpdf-bar-left">
     <button type="button" id="qxpdfTocBtn" aria-label="目录">☰</button>
@@ -111,7 +111,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
   </span>
   <span class="qxpdf-bar-right"></span>
 </div>
-<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v47">
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v48">
   <aside class="qxpdf-side" id="qxpdfSide">
     <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
     <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
@@ -350,12 +350,17 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
           } else if (a.dest) {
             link.addEventListener('click', function(ev){
               ev.preventDefault();
+              
+              
+              if (pinching) { return; }
               if (Date.now() - lastPinchEndTime < 500) { return; } 
               destToPage(a.dest).then(function(pg){ if (pg) { gotoPage(pg); } });
             });
           } else if (a.action) {
             link.addEventListener('click', function(ev){
               ev.preventDefault();
+              
+              if (pinching) { return; }
               if (Date.now() - lastPinchEndTime < 500) { return; } 
               if (a.action && a.action.D) {
                 destToPage(a.action.D).then(function(pg){ if (pg) { gotoPage(pg); } });
