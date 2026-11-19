@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Reader v44 捏合測試</title>
+<title>Reader v45 捏合測試</title>
 <style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--muted:#7A6A56;--line:#E4DCC8;--fp-line:#D8CDB2}
 body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
@@ -22,7 +22,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
 .qxpdf-bar-pages{display:flex;gap:8px;align-items:center}
 .qxpdf-bar-zoom{display:flex;gap:8px;align-items:center}
 .qxpdf-bar-right{}
-.qxpdf-bar button{font-size:15px;font-weight:700;line-height:1;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:999px;padding:2px 10px;cursor:pointer;text-decoration:none}
+.qxpdf-bar button{font-size:15px;font-weight:700;line-height:1;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:999px;padding:2px 10px;cursor:pointer;text-decoration:none;touch-action:manipulation}
 .qxpdf-bar button:hover{background:var(--gold);color:#fff;text-decoration:none}
 .qxpdf-pageinfo{font-size:14px;color:var(--muted);margin:0 4px}
 .qxpdf-body{display:flex;gap:8px;align-items:flex-start;padding:0}
@@ -55,7 +55,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
 @media (max-width:700px){
   .qxpdf-body{display:block}
   .qxpdf-bar{grid-template-columns:1fr auto 1fr;overflow-x:auto;gap:6px;padding-bottom:2px}
-  .qxpdf-bar button{font-size:12px;font-weight:400;padding:2px 9px}
+  .qxpdf-bar button{font-size:13px;font-weight:400;padding:5px 13px;touch-action:manipulation}
   .qxpdf-bar-center{gap:6px}
   .qxpdf-bar-pages,.qxpdf-bar-zoom{gap:6px}
   .qxpdf-title{display:none}
@@ -91,7 +91,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         <a class="util-saved" href="/saved.html"><svg width="8" height="10" viewBox="4.5 2.5 15 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>書籤</a>
     </div>
     </header>
-<div id="testlog">Reader v44 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
+<div id="testlog">Reader v45 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
 <div class="qxpdf-bar">
   <span class="qxpdf-bar-left">
     <button type="button" id="qxpdfTocBtn" aria-label="目录">☰</button>
@@ -111,7 +111,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
   </span>
   <span class="qxpdf-bar-right"></span>
 </div>
-<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v44">
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v45">
   <aside class="qxpdf-side" id="qxpdfSide">
     <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
     <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
@@ -553,16 +553,25 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
       pinchAnchor = a;
     }
   }, {passive:true});
+  
+  
+  
+  var pinchRafPending = false;
+  var pinchLatestD = 0;
   main.addEventListener('touchmove', function(e){
     if (!pinching || e.touches.length !== 2) return;
     e.preventDefault();
-    var d = pinchDist(e.touches);
-    if (pinchStartDist > 0) {
-      pinchZoom = Math.min(maxZoom(), Math.max(0.5, pinchStartZoom * d / pinchStartDist));
-      
-      
-      pagesBox.style.transform = 'scale(' + pinchZoom + ')';
-      zoomInfo.textContent = Math.round(pinchZoom * 100) + '%';
+    pinchLatestD = pinchDist(e.touches);
+    if (pinchStartDist > 0 && !pinchRafPending) {
+      pinchRafPending = true;
+      requestAnimationFrame(function(){
+        pinchRafPending = false;
+        pinchZoom = Math.min(maxZoom(), Math.max(0.5, pinchStartZoom * pinchLatestD / pinchStartDist));
+        
+        
+        pagesBox.style.transform = 'scale(' + pinchZoom + ')';
+        zoomInfo.textContent = Math.round(pinchZoom * 100) + '%';
+      });
     }
   }, {passive:false});
   function pinchEnd(e){
