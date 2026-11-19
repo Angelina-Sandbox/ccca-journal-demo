@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Reader v36 捏合測試</title>
+<title>Reader v37 捏合測試</title>
 <style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--muted:#7A6A56;--line:#E4DCC8;--fp-line:#D8CDB2}
 body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
@@ -90,7 +90,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         <a class="util-saved" href="/saved.html"><svg width="8" height="10" viewBox="4.5 2.5 15 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>書籤</a>
     </div>
     </header>
-<div id="testlog">Reader v36 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
+<div id="testlog">Reader v37 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
 <div class="qxpdf-bar">
   <span class="qxpdf-bar-left">
     <button type="button" id="qxpdfTocBtn" aria-label="目录">☰</button>
@@ -242,7 +242,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
     var div = pageDivs[n - 1];
     if (!div) { return; }
     pdfDoc.getPage(n).then(function(page){
-      if (myGen !== renderGen) { return; } 
+      if (myGen !== renderGen) { rendered[n] = false; return; } 
       var dpr = window.devicePixelRatio || 1;
       var vp1 = page.getViewport({scale: 1});
       var scale = pageWidth() / vp1.width;
@@ -261,10 +261,12 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
       div.appendChild(canvas);
       var task = page.render({canvasContext: canvas.getContext('2d'), viewport: rvp});
       if (task && task.promise) {
+        renderTasks[n] = task;
         task.promise.then(function(){
-          if (myGen !== renderGen) { return; }
+          delete renderTasks[n];
+          if (myGen !== renderGen) { rendered[n] = false; return; }
           oldCanvases.forEach(function(c){ if (c.parentNode === div) { div.removeChild(c); } });
-        }).catch(function(){});
+        }).catch(function(){ delete renderTasks[n]; rendered[n] = false; });
       } else {
         oldCanvases.forEach(function(c){ if (c.parentNode === div) { div.removeChild(c); } });
       }
@@ -319,9 +321,15 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
     });
   }
   var renderGen = 0; 
+  var renderTasks = {}; 
   function clearRendered(){
     renderGen++;
     rendered = {};
+    
+    Object.keys(renderTasks).forEach(function(k){
+      try { if (renderTasks[k] && renderTasks[k].cancel) { renderTasks[k].cancel(); } } catch (e) {}
+      delete renderTasks[k];
+    });
     
   }
   var io = new IntersectionObserver(function(entries){
@@ -341,13 +349,9 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
     lastScrollTop = st;
     
     
-    var viewTop = st, viewBottom = st + main.clientHeight;
-    var best = curPage, bestVisible = -1;
-    pageDivs.forEach(function(div, i){
-      var top = div.offsetTop, bottom = top + div.offsetHeight;
-      var visible = Math.min(bottom, viewBottom) - Math.max(top, viewTop);
-      if (visible > bestVisible) { bestVisible = visible; best = i + 1; }
-    });
+    var cy = st + main.clientHeight / 2;
+    var a = anchorAt(main.scrollLeft + main.clientWidth / 2, cy);
+    var best = a.page;
     if (best !== curPage) {
       curPage = best;
       updateCurrentUI();
@@ -439,6 +443,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
           var ny = d2.offsetTop + fracY * d2.offsetHeight;
           main.scrollLeft = Math.max(0, nx - tx);
           main.scrollTop = Math.max(0, ny - ty);
+          lastScrollTop = main.scrollTop; 
           curPage = anchorPage;
           updateCurrentUI();
         } else {
