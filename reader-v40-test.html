@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reader v40 捏合測試</title>
+<style>
+:root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--muted:#7A6A56;--line:#E4DCC8;--fp-line:#D8CDB2}
+body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:12px 24px 64px}
+.main-nav{display:none!important}
+#testlog{height:54px;overflow:auto;background:#f3efe6;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--muted);white-space:pre-wrap}
+
+ 
+.wrap{max-width:none;padding:0}
+.site-head{display:none !important}
+.foot{display:none !important}
+.main-nav{display:none !important}
+.qxpdf-note{text-align:center;color:var(--muted);font-size:14px;margin:-8px 0 14px}
+.qxpdf-bar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:0 0 10px;padding:10px 12px 0}
+.qxpdf-bar-left{display:flex;gap:10px;align-items:center;min-width:0}
+.qxpdf-title{font-size:14px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qxpdf-bar-center{display:flex;gap:28px;align-items:center}
+.qxpdf-bar-pages{display:flex;gap:8px;align-items:center}
+.qxpdf-bar-zoom{display:flex;gap:8px;align-items:center}
+.qxpdf-bar-right{}
+.qxpdf-bar button{font-size:15px;font-weight:700;line-height:1;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:999px;padding:2px 10px;cursor:pointer;text-decoration:none}
+.qxpdf-bar button:hover{background:var(--gold);color:#fff;text-decoration:none}
+.qxpdf-pageinfo{font-size:14px;color:var(--muted);margin:0 4px}
+.qxpdf-body{display:flex;gap:8px;align-items:flex-start;padding:0}
+.qxpdf-side{width:240px;flex:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px 16px;max-height:calc(100vh - 190px);overflow-y:auto;margin-left:10px}
+.qxpdf-side-head{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:bold;color:var(--title-c);margin-bottom:8px}
+.qxpdf-side-head button{border:none;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 2px}
+.qxpdf-toc{font-size:14px;line-height:1.9}
+.qxpdf-toc a{color:var(--brown);text-decoration:none}
+.qxpdf-toc a:hover{color:var(--gold);text-decoration:underline}
+.qxpdf-toc a.on{color:var(--gold);font-weight:bold;border-left:3px solid var(--gold);padding-left:8px}
+.qxpdf-toc .lvl1{padding-left:16px}
+.qxpdf-main{flex:1;min-width:0;position:relative;background:var(--cream);border:1px solid var(--line);border-radius:0;height:calc(100vh - 190px);overflow-y:auto;overflow-x:auto;overflow-anchor:none;padding:0;touch-action:pan-x pan-y;scrollbar-width:thin;scrollbar-color:var(--gold) var(--card)}
+.qxpdf-main::-webkit-scrollbar{width:10px;height:10px}
+.qxpdf-main::-webkit-scrollbar-track{background:var(--card)}
+.qxpdf-main::-webkit-scrollbar-thumb{background:var(--gold);border-radius:6px;border:2px solid var(--card)}
+.qxpdf-side{scrollbar-width:thin;scrollbar-color:var(--gold) var(--card)}
+.qxpdf-side::-webkit-scrollbar{width:10px}
+.qxpdf-side::-webkit-scrollbar-track{background:var(--card)}
+.qxpdf-side::-webkit-scrollbar-thumb{background:var(--gold);border-radius:6px;border:2px solid var(--card)}
+#qxpdfPages{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+#qxpdfSpacer{width:100%;height:0}
+.qxpdf-status{text-align:center;color:var(--muted);font-size:14px;line-height:2;padding:24px 0}
+.qxpdf-page{position:relative;margin:0 auto 16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.qxpdf-page canvas{display:block;width:100%;height:auto}
+.qxpdf-page .annotationLayer{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:2}
+.qxpdf-page .annotationLayer .linkAnnotation{position:absolute;pointer-events:auto;cursor:pointer}
+.qxpdf-page .annotationLayer .linkAnnotation>a{position:absolute;top:0;left:0;width:100%;height:100%;display:block;background:transparent;cursor:pointer}
+.qxpdf-page .annotationLayer .linkAnnotation>a:hover{background:rgba(255,215,0,.18)}
+.qxpdf-body.qxpdf-sideclosed .qxpdf-side{display:none}
+@media (max-width:700px){
+  .qxpdf-body{display:block}
+  .qxpdf-bar{grid-template-columns:1fr auto 1fr;overflow-x:auto;gap:6px;padding-bottom:2px}
+  .qxpdf-bar button{font-size:12px;font-weight:400;padding:2px 9px}
+  .qxpdf-bar-center{gap:6px}
+  .qxpdf-bar-pages,.qxpdf-bar-zoom{gap:6px}
+  .qxpdf-title{display:none}
+  .qxpdf-pageinfo{font-size:12px;margin:0 2px}
+  .qxpdf-side{position:fixed;left:0;top:0;bottom:0;width:max-content;min-width:220px;max-width:min(85vw,320px);max-height:none;border-radius:0;z-index:60;box-shadow:4px 0 24px rgba(0,0,0,.25);display:none;margin-left:0}
+  .qxpdf-body:not(.qxpdf-sideclosed) .qxpdf-side{display:block;animation:qxPdfSideIn .22s ease-out}
+  @keyframes qxPdfSideIn { from { transform:translateX(-100%); } to { transform:translateX(0); } }
+  .qxpdf-scrim{display:none}
+  .qxpdf-body:not(.qxpdf-sideclosed) .qxpdf-scrim{display:block;position:fixed;inset:0;z-index:55;background:rgba(30,22,12,.38)}
+  .qxpdf-main{height:calc(100dvh - 40px);scrollbar-width:none}
+  .qxpdf-main::-webkit-scrollbar{display:none}
+  .qxpdf-side{scrollbar-width:none}
+  .qxpdf-side::-webkit-scrollbar{display:none}
+}
+
+</style></head>
+<body>
+<div class="wrap">
+<header class="site-head">
+        <div class="mast-left">
+            <div class="masthead">
+                <h1><a href="/"><img class="mast-art mast-t" src="https://toj-demo.pages.dev/images/site/masthead-full-tc.png" alt="千橡雜誌"><img class="mast-art mast-s" src="https://toj-demo.pages.dev/images/site/masthead-full-sc.png" alt="千橡杂志"><img class="mast-art mast-t-dark" src="https://toj-demo.pages.dev/images/site/masthead-full-tc-dark.png" alt=""><img class="mast-art mast-s-dark" src="https://toj-demo.pages.dev/images/site/masthead-full-sc-dark.png" alt=""></a></h1>
+            </div>
+        </div>
+    <div class="util-bar">
+        <div class="search-box">
+            <svg class="search-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>
+            <input type="search" id="siteSearch" placeholder="搜尋文章…" autocomplete="off">
+            <div class="search-panel" id="searchPanel" hidden></div>
+        </div>
+        <button class="theme-toggle" type="button" id="langToggle">簡體</button>
+        <button class="theme-toggle" type="button" id="themeToggle">☾ 深色</button>
+        <a class="util-saved" href="/saved.html"><svg width="8" height="10" viewBox="4.5 2.5 15 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>書籤</a>
+    </div>
+    </header>
+<div id="testlog">Reader v40 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
+<div class="qxpdf-bar">
+  <span class="qxpdf-bar-left">
+    <button type="button" id="qxpdfTocBtn" aria-label="目录">☰</button>
+    <span class="qxpdf-title" id="qxpdfTitle">整本雜誌</span>
+  </span>
+  <span class="qxpdf-bar-center">
+    <span class="qxpdf-bar-pages">
+      <button type="button" id="qxpdfPrev" aria-label="上一页">←</button>
+      <span class="qxpdf-pageinfo" id="qxpdfPageInfo">1 / —</span>
+      <button type="button" id="qxpdfNext" aria-label="下一页">→</button>
+    </span>
+    <span class="qxpdf-bar-zoom">
+      <button type="button" id="qxpdfZoomOut" aria-label="缩小">−</button>
+      <span class="qxpdf-pageinfo" id="qxpdfZoomInfo">100%</span>
+      <button type="button" id="qxpdfZoomIn" aria-label="放大">+</button>
+    </span>
+  </span>
+  <span class="qxpdf-bar-right"></span>
+</div>
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v40">
+  <aside class="qxpdf-side" id="qxpdfSide">
+    <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
+    <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
+  </aside>
+  <div class="qxpdf-scrim" id="qxpdfScrim"></div>
+  <div class="qxpdf-main" id="qxpdfMain">
+    <div class="qxpdf-status" id="qxpdfStatus">正在打开…</div>
+    <div id="qxpdfPages"></div>
+    <div id="qxpdfSpacer"></div>
+  </div>
+</div>
+
+<footer class="foot">
+        <a href="/contribute.html" style="font-size:11px"><svg class="foot-ic" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 4 5 8 5 12l-5 6-5-6c0-4 2-8 5-12z"/><circle cx="12" cy="13" r="1.6"/><path d="M12 14.6V18"/></svg>我要投稿</a> · <a href="/feedback.html" style="font-size:11px"><svg class="foot-ic" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3.5 7.5L12 13l8.5-5.5"/></svg>讀者反饋</a><br>
+        <span style="font-size:11px">示範站：樣例文章內容摘自 2026 秋季刊</span><br>
+        <span style="font-size:11px">© 2026 《千橡》雜誌社 · 康谷中華文化協會 (CCCA)</span>
+    </footer>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(function(){
+  var body = document.getElementById('qxpdfBody');
+  var side = document.getElementById('qxpdfSide');
+  var scrim = document.getElementById('qxpdfScrim');
+  
+  if (window.innerWidth > 700) { body.classList.remove('qxpdf-sideclosed'); }
+  var tocBox = document.getElementById('qxpdfToc');
+  var main = document.getElementById('qxpdfMain');
+  var pagesBox = document.getElementById('qxpdfPages');
+  var spacer = document.getElementById('qxpdfSpacer');
+  var statusBox = document.getElementById('qxpdfStatus');
+  var pageInfo = document.getElementById('qxpdfPageInfo');
+  var zoomInfo = document.getElementById('qxpdfZoomInfo');
+  var params = new URLSearchParams(window.location.search);
+  var issue = params.get('issue') || '2026-fall';
+  var ISSUE_TITLES = {'2026-fall':'2026 秋季刊','2026-spring':'2026 春季刊','2025-fall':'2025 秋季刊'};
+  var titleEl = document.getElementById('qxpdfTitle');
+  if (titleEl) { titleEl.textContent = ISSUE_TITLES[issue] || issue; }
+  window.QX_REMOVE_PAGES = [8, 9, 10];
+  var fileUrl = 'pdf/CCCA_Magazine_Perfect_Bookmarks_compressed.pdf';
+  
+  
+  var vpMeta = document.querySelector('meta[name="viewport"]');
+  if (vpMeta) { vpMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'); }
+  
+  body.addEventListener('contextmenu', function(ev){ ev.preventDefault(); });
+  function setSide(open){
+    body.classList.toggle('qxpdf-sideclosed', !open);
+    if (window.innerWidth <= 700) { document.body.style.overflow = open ? 'hidden' : ''; }
+  }
+  function toggleSide(){
+    setSide(body.classList.contains('qxpdf-sideclosed'));
+  }
+  document.getElementById('qxpdfTocBtn').addEventListener('click', toggleSide);
+  document.getElementById('qxpdfSideClose').addEventListener('click', function(){ setSide(false); });
+  if (scrim) { scrim.addEventListener('click', function(){ setSide(false); }); }
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !body.classList.contains('qxpdf-sideclosed')) { setSide(false); }
+  });
+  function fail(msg){
+    statusBox.style.display = 'block';
+    statusBox.textContent = msg;
+  }
+  if (typeof pdfjsLib === 'undefined') {
+    fail('查看器没能载入（可能是网络问题）。');
+    tocBox.textContent = '目录没能载入。';
+    return;
+  }
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  var pdfDoc = null, numPages = 0, zoom = 1, curPage = 1;
+  var pageDivs = [], rendered = {}, tocLinks = [];
+  var vp1W = 0, vp1H = 0;
+  var pageLabels = null;
+  
+  function displayPage(n){
+    if (pageLabels && pageLabels[n - 1] !== undefined && pageLabels[n - 1] !== null && pageLabels[n - 1] !== '') {
+      return pageLabels[n - 1];
+    }
+    return String(n);
+  }
+  
+  var navLock = false, navTimer = null;
+  function lockNav(){
+    navLock = true;
+    if (navTimer) { clearTimeout(navTimer); }
+    navTimer = setTimeout(function(){ navLock = false; }, 300);
+  }
+  
+  
+  function fitViewerHeight(){
+    var r = main.getBoundingClientRect();
+    var h = window.innerHeight - r.top;
+    if (h < 300) { h = 300; }
+    main.style.height = h + 'px';
+    side.style.maxHeight = h + 'px';
+  }
+  window.addEventListener('resize', fitViewerHeight);
+  window.addEventListener('load', fitViewerHeight);
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitViewerHeight); }
+  fitViewerHeight();
+  
+  
+  
+  
+  function basePageWidth(){
+    var w = main.clientWidth;
+    if (w < 100) { w = 300; }
+    return Math.round(w);
+  }
+  function updatePageWidths(){
+    var w = basePageWidth() + 'px';
+    pageDivs.forEach(function(d){ d.style.width = w; });
+  }
+  
+  function baseContentHeight(){
+    return pagesBox.offsetHeight || 0;
+  }
+  
+  function applyZoomTransform(){
+    pagesBox.style.transform = 'scale(' + zoom + ')';
+    pagesBox.style.transformOrigin = '0 0';
+    spacer.style.width = Math.round(basePageWidth() * zoom) + 'px';
+    spacer.style.height = Math.round(baseContentHeight() * zoom) + 'px';
+  }
+  var linkService = {
+    goToDestination: function(dest){
+      destToPage(dest).then(function(pg){ if (pg) { gotoPage(pg); } });
+    },
+    navigateTo: function(dest){ this.goToDestination(dest); },
+    getDestinationHash: function(dest){ return '#'; },
+    getAnchorUrl: function(hash){ return hash; },
+    addLinkAttributes: function(link, url, newWindow){
+      if (url) { link.href = url; }
+      if (newWindow) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+    },
+    executeNamedAction: function(){},
+    isPageVisible: function(){ return true; },
+    isPageCached: function(){ return true; },
+    goToPage: function(n){ gotoPage(n); }
+  };
+  function renderPage(n){
+    if (rendered[n]) { return; }
+    rendered[n] = true;
+    var myGen = renderGen;
+    var div = pageDivs[n - 1];
+    if (!div) { return; }
+    pdfDoc.getPage(n).then(function(page){
+      if (myGen !== renderGen) { rendered[n] = false; return; } 
+      var dpr = window.devicePixelRatio || 1;
+      var vp1 = page.getViewport({scale: 1});
+      
+      var displayScale = basePageWidth() * zoom / vp1.width;
+      var renderScale = displayScale * dpr;
+      if (renderScale > 4) { renderScale = 4; }
+      var rvp = page.getViewport({scale: renderScale});
+      
+      var divScale = basePageWidth() / vp1.width;
+      var vp = page.getViewport({scale: divScale});
+      var canvas = document.createElement('canvas');
+      canvas.width = rvp.width; canvas.height = rvp.height;
+      
+      
+      var oldCanvases = Array.prototype.slice.call(div.querySelectorAll('canvas'));
+      var oldLayers = Array.prototype.slice.call(div.querySelectorAll('.annotationLayer'));
+      div.appendChild(canvas);
+      var task = page.render({canvasContext: canvas.getContext('2d'), viewport: rvp});
+      if (task && task.promise) {
+        renderTasks[n] = task;
+        task.promise.then(function(){
+          delete renderTasks[n];
+          if (myGen !== renderGen) { rendered[n] = false; return; }
+          oldCanvases.forEach(function(c){ if (c.parentNode === div) { div.removeChild(c); } });
+        }).catch(function(){ delete renderTasks[n]; rendered[n] = false; });
+      } else {
+        oldCanvases.forEach(function(c){ if (c.parentNode === div) { div.removeChild(c); } });
+      }
+      page.getAnnotations().then(function(annotations){
+        if (myGen !== renderGen) { return; } 
+        if (!annotations || !annotations.length) {
+          oldLayers.forEach(function(l){ if (l.parentNode === div) { div.removeChild(l); } });
+          return;
+        }
+        var layerDiv = document.createElement('div');
+        layerDiv.className = 'annotationLayer';
+        div.appendChild(layerDiv);
+        
+        
+        annotations.forEach(function(a){
+          if (a.subtype !== 'Link' || !a.rect) { return; }
+          var r = vp.convertToViewportRectangle(a.rect);
+          var x = Math.min(r[0], r[2]), y = Math.min(r[1], r[3]);
+          var w = Math.abs(r[2] - r[0]), h = Math.abs(r[3] - r[1]);
+          if (w < 1 || h < 1) { return; }
+          var holder = document.createElement('div');
+          holder.className = 'linkAnnotation';
+          holder.style.left = x + 'px';
+          holder.style.top = y + 'px';
+          holder.style.width = w + 'px';
+          holder.style.height = h + 'px';
+          var link = document.createElement('a');
+          link.href = 'javascript:void(0)';
+          if (a.url) {
+            link.href = a.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+          } else if (a.dest) {
+            link.addEventListener('click', function(ev){
+              ev.preventDefault();
+              if (Date.now() - lastPinchEndTime < 500) { return; } 
+              destToPage(a.dest).then(function(pg){ if (pg) { gotoPage(pg); } });
+            });
+          } else if (a.action) {
+            link.addEventListener('click', function(ev){
+              ev.preventDefault();
+              if (Date.now() - lastPinchEndTime < 500) { return; } 
+              if (a.action && a.action.D) {
+                destToPage(a.action.D).then(function(pg){ if (pg) { gotoPage(pg); } });
+              }
+            });
+          }
+          holder.appendChild(link);
+          layerDiv.appendChild(holder);
+        });
+        
+        oldLayers.forEach(function(l){ if (l.parentNode === div) { div.removeChild(l); } });
+      });
+    });
+  }
+  var renderGen = 0; 
+  var renderTasks = {}; 
+  function clearRendered(){
+    renderGen++;
+    rendered = {};
+    
+    Object.keys(renderTasks).forEach(function(k){
+      try { if (renderTasks[k] && renderTasks[k].cancel) { renderTasks[k].cancel(); } } catch (e) {}
+      delete renderTasks[k];
+    });
+    
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (en.isIntersecting) {
+        var n = parseInt(en.target.getAttribute('data-page'), 10);
+        renderPage(n);
+      }
+    });
+  }, {root: main, rootMargin: '800px 0px'});
+  var lastScrollTop = -1;
+  function markCurrent(){
+    if (navLock) { return; }
+    
+    var st = main.scrollTop;
+    if (st === lastScrollTop) { return; }
+    lastScrollTop = st;
+    
+    
+    
+    var cy = (st + main.clientHeight / 2) / zoom;
+    var cx = (main.scrollLeft + main.clientWidth / 2) / zoom;
+    var a = anchorAt(cx, cy);
+    var best = a.page;
+    if (best !== curPage) {
+      curPage = best;
+      updateCurrentUI();
+    }
+  }
+  function updateCurrentUI(){
+    
+    pageInfo.textContent = displayPage(curPage) + ' / ' + numPages;
+    tocLinks.forEach(function(a){
+      a.classList.toggle('on', parseInt(a.getAttribute('data-page'), 10) === curPage);
+    });
+  }
+  var raf = null;
+  main.addEventListener('scroll', function(){
+    if (raf) { return; }
+    raf = requestAnimationFrame(function(){ raf = null; markCurrent(); });
+  });
+  function gotoPage(n){
+    if (n < 1) { n = 1; }
+    if (n > numPages) { n = numPages; }
+    curPage = n;
+    lockNav();
+    
+    renderPage(n);
+    if (n > 1) { renderPage(n - 1); }
+    if (n < numPages) { renderPage(n + 1); }
+    var div = pageDivs[n - 1];
+    if (div) { main.scrollTop = div.offsetTop * zoom - 16; }
+    updateCurrentUI();
+  }
+  document.getElementById('qxpdfPrev').addEventListener('click', function(){ gotoPage(curPage - 1); });
+  document.getElementById('qxpdfNext').addEventListener('click', function(){ gotoPage(curPage + 1); });
+  
+  var ZOOM_STEPS = [0.5, 0.625, 0.8, 1, 1.25, 1.5625, 2, 2.5, 3, 4];
+  function maxZoom(){ return window.innerWidth <= 700 ? 4 : 2; }
+  
+  
+  function anchorAt(cx, cy){
+    var a = {page: curPage, fracX: 0.5, fracY: 0};
+    for (var i = 0; i < pageDivs.length; i++) {
+      var d = pageDivs[i];
+      var top = d.offsetTop, bottom = top + d.offsetHeight;
+      if (cy >= top && cy < bottom) {
+        a.page = i + 1;
+        a.fracY = d.offsetHeight ? (cy - top) / d.offsetHeight : 0;
+        a.fracX = d.offsetWidth ? (cx - d.offsetLeft) / d.offsetWidth : 0.5;
+        return a;
+      }
+      if (cy < top) { a.page = i + 1; a.fracY = 0; a.fracX = 0.5; return a; }
+      if (i === pageDivs.length - 1) { a.page = i + 1; a.fracY = 1; a.fracX = 0.5; }
+    }
+    return a;
+  }
+  var pinchAnchor = null; 
+  function setZoom(z){
+    
+    
+    
+    var anchor, tx, ty;
+    if (pinchAnchor) {
+      anchor = pinchAnchor;
+      pinchAnchor = null;
+      var mr = main.getBoundingClientRect();
+      tx = anchor.clientX - mr.left;
+      ty = anchor.clientY - mr.top;
+    } else {
+      var cx = (main.scrollLeft + main.clientWidth / 2) / zoom;
+      var cy = (main.scrollTop + main.clientHeight / 2) / zoom;
+      anchor = anchorAt(cx, cy);
+      tx = main.clientWidth / 2;
+      ty = main.clientHeight / 2;
+    }
+    var anchorPage = anchor.page, fracX = anchor.fracX, fracY = anchor.fracY;
+    var stayPage = anchorPage;
+    zoom = Math.min(maxZoom(), Math.max(0.5, z));
+    zoomInfo.textContent = Math.round(zoom * 100) + '%';
+    var wasRendered = Object.keys(rendered).map(function(k){ return parseInt(k, 10); });
+    clearRendered();
+    
+    applyZoomTransform();
+    wasRendered.forEach(function(n){ renderPage(n); });
+    lockNav();
+    
+    var d2 = pageDivs[anchorPage - 1];
+    if (d2 && d2.offsetHeight) {
+      var nx = (d2.offsetLeft + fracX * d2.offsetWidth) * zoom;
+      var ny = (d2.offsetTop + fracY * d2.offsetHeight) * zoom;
+      main.scrollLeft = Math.max(0, nx - tx);
+      main.scrollTop = Math.max(0, ny - ty);
+      lastScrollTop = main.scrollTop;
+      curPage = anchorPage;
+      updateCurrentUI();
+    } else {
+      gotoPage(stayPage);
+    }
+  }
+  function zoomStep(dir){
+    var idx = 0, best = Infinity;
+    ZOOM_STEPS.forEach(function(s, i){
+      var d = Math.abs(s - zoom);
+      if (d < best) { best = d; idx = i; }
+    });
+    var next = idx + dir;
+    if (next < 0) { next = 0; }
+    if (next >= ZOOM_STEPS.length) { next = ZOOM_STEPS.length - 1; }
+    while (ZOOM_STEPS[next] > maxZoom() && next > 0) { next--; }
+    setZoom(ZOOM_STEPS[next]);
+  }
+  document.getElementById('qxpdfZoomIn').addEventListener('click', function(){ zoomStep(1); });
+  document.getElementById('qxpdfZoomOut').addEventListener('click', function(){ zoomStep(-1); });
+  
+  
+  var pinchStartDist = 0, pinchStartZoom = 1, pinching = false, pinchZoom = 1;
+  var lastPinchEndTime = 0; 
+  function pinchDist(t){
+    var dx = t[0].clientX - t[1].clientX;
+    var dy = t[0].clientY - t[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  main.addEventListener('touchstart', function(e){
+    if (e.touches.length === 2) {
+      pinching = true;
+      pinchStartDist = pinchDist(e.touches);
+      pinchStartZoom = zoom;
+      pinchZoom = zoom;
+      
+      
+      var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      var my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      var mr = main.getBoundingClientRect();
+      var pcx = (main.scrollLeft + (mx - mr.left)) / zoom;
+      var pcy = (main.scrollTop + (my - mr.top)) / zoom;
+      pagesBox.style.transformOrigin = pcx + 'px ' + pcy + 'px';
+      
+      var a = anchorAt(pcx, pcy);
+      a.clientX = mx; a.clientY = my;
+      pinchAnchor = a;
+    }
+  }, {passive:true});
+  main.addEventListener('touchmove', function(e){
+    if (!pinching || e.touches.length !== 2) return;
+    e.preventDefault();
+    var d = pinchDist(e.touches);
+    if (pinchStartDist > 0) {
+      pinchZoom = Math.min(maxZoom(), Math.max(0.5, pinchStartZoom * d / pinchStartDist));
+      
+      pagesBox.style.transform = 'scale(' + pinchZoom + ')';
+      zoomInfo.textContent = Math.round(pinchZoom * 100) + '%';
+    }
+  }, {passive:false});
+  function pinchEnd(e){
+    if (!pinching) return;
+    if (e.touches.length < 2) {
+      pinching = false;
+      lastPinchEndTime = Date.now();
+      zoom = pinchZoom;
+      zoomStep(0);
+    }
+  }
+  main.addEventListener('touchend', pinchEnd);
+  main.addEventListener('touchcancel', pinchEnd);
+  var resizeTimer = null;
+  window.addEventListener('resize', function(){
+    if (resizeTimer) { clearTimeout(resizeTimer); }
+    resizeTimer = setTimeout(function(){
+      
+      
+      var cx = (main.scrollLeft + main.clientWidth / 2) / zoom;
+      var cy = (main.scrollTop + main.clientHeight / 2) / zoom;
+      var anchor = anchorAt(cx, cy);
+      var wasRendered = Object.keys(rendered).map(function(k){ return parseInt(k, 10); });
+      clearRendered();
+      updatePageWidths(); 
+      applyZoomTransform();
+      wasRendered.forEach(function(n){ renderPage(n); });
+      var d2 = pageDivs[anchor.page - 1];
+      if (d2 && d2.offsetHeight) {
+        var nx = (d2.offsetLeft + anchor.fracX * d2.offsetWidth) * zoom;
+        var ny = (d2.offsetTop + anchor.fracY * d2.offsetHeight) * zoom;
+        main.scrollLeft = Math.max(0, nx - main.clientWidth / 2);
+        main.scrollTop = Math.max(0, ny - main.clientHeight / 2);
+        lastScrollTop = main.scrollTop;
+        curPage = anchor.page;
+        updateCurrentUI();
+      }
+    }, 200);
+  });
+  function destToPage(dest){
+    return Promise.resolve().then(function(){
+      if (!dest) { return null; }
+      var p = (typeof dest === 'string') ? pdfDoc.getDestination(dest) : Promise.resolve(dest);
+      return p.then(function(d){
+        if (!d || !d[0]) { return null; }
+        return pdfDoc.getPageIndex(d[0]);
+      }).then(function(idx){
+        return (idx === null || idx === undefined) ? null : idx + 1;
+      });
+    }).catch(function(){ return null; });
+  }
+  function buildToc(items, level){
+    var frag = document.createDocumentFragment();
+    var jobs = items.map(function(it){
+      return destToPage(it.dest).then(function(pg){
+        var el;
+        if (pg) {
+          el = document.createElement('a');
+          el.href = 'javascript:void(0)';
+          el.textContent = it.title;
+          el.setAttribute('data-page', pg);
+          if (level > 0) { el.className = 'lvl' + level; }
+          el.addEventListener('click', function(ev){
+            ev.preventDefault();
+            gotoPage(pg);
+            if (window.innerWidth <= 700) { setSide(false); }
+          });
+          tocLinks.push(el);
+        } else {
+          el = document.createElement('span');
+          el.textContent = it.title;
+          if (level > 0) { el.className = 'lvl' + level; }
+        }
+        var wrap = document.createElement('div');
+        wrap.appendChild(el);
+        if (it.items && it.items.length) {
+          return buildToc(it.items, level + 1).then(function(childFrag){
+            wrap.appendChild(childFrag);
+            return wrap;
+          });
+        }
+        return wrap;
+      });
+    });
+    return Promise.all(jobs).then(function(wraps){
+      wraps.forEach(function(w){ frag.appendChild(w); });
+      return frag;
+    });
+  }
+  function loadOutline(doc){
+    doc.getOutline().then(function(outline){
+      if (!outline || !outline.length) {
+        tocBox.textContent = '本期 PDF 没有目录书签。';
+        return null;
+      }
+      return buildToc(outline, 0);
+    }).then(function(frag){
+      if (!frag) { return; }
+      tocBox.innerHTML = '';
+      tocBox.appendChild(frag);
+    }).catch(function(){
+      tocBox.textContent = '本期 PDF 没有目录书签。';
+    });
+  }
+  
+  
+  
+  
+  
+  function getRemovePages(){
+    if (window.QX_REMOVE_PAGES && window.QX_REMOVE_PAGES.length) {
+      return window.QX_REMOVE_PAGES.slice();
+    }
+    var r = params.get('remove');
+    if (r) {
+      return r.split(',').map(function(s){ return parseInt(s, 10); }).filter(function(n){ return n > 0; });
+    }
+    return null;
+  }
+  function loadPdfLib(){
+    return new Promise(function(resolve, reject){
+      if (window.PDFLib) { resolve(window.PDFLib); return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+      s.onload = function(){ resolve(window.PDFLib); };
+      s.onerror = function(){ reject(new Error('pdf-lib 載入失敗')); };
+      document.head.appendChild(s);
+    });
+  }
+  
+  function readPageLabels(doc){
+    var ctx = doc.context;
+    var PDFName = window.PDFLib.PDFName;
+    var numPages = doc.getPageCount();
+    var labels = [];
+    for (var i = 0; i < numPages; i++) { labels.push(String(i + 1)); }
+    var plRef = doc.catalog.get(PDFName.of('PageLabels'));
+    if (!plRef) { return labels; }
+    var pl = ctx.lookup(plRef);
+    if (!pl || !pl.get) { return labels; }
+    var numsRef = pl.get(PDFName.of('Nums'));
+    if (!numsRef) { return labels; }
+    var nums = ctx.lookup(numsRef);
+    if (!nums || !nums.asArray) { return labels; }
+    var arr = nums.asArray();
+    for (var k = 0; k + 1 < arr.length; k += 2) {
+      var idxObj = ctx.lookup(arr[k]);
+      var dictObj = ctx.lookup(arr[k + 1]);
+      if (!idxObj || !dictObj || !dictObj.get) { continue; }
+      var startIdx = idxObj.asNumber ? idxObj.asNumber() : Number(idxObj);
+      var style = dictObj.get(PDFName.of('S'));
+      var stObj = dictObj.get(PDFName.of('St'));
+      var st = stObj ? (stObj.asNumber ? stObj.asNumber() : Number(stObj)) : 1;
+      var nextIdx = numPages;
+      if (k + 2 < arr.length) {
+        var nxt = ctx.lookup(arr[k + 2]);
+        if (nxt && nxt.asNumber) { nextIdx = nxt.asNumber(); }
+      }
+      var isDecimal = String(style) === '/D';
+      for (var i2 = startIdx; i2 < nextIdx && i2 < numPages; i2++) {
+        labels[i2] = isDecimal ? String(st + (i2 - startIdx)) : String(i2 + 1);
+      }
+    }
+    return labels;
+  }
+  
+  function rebuildPageLabels(doc, remainingLabels){
+    var ctx = doc.context;
+    var PDFName = window.PDFLib.PDFName;
+    var PDFNumber = window.PDFLib.PDFNumber;
+    var PDFDict = window.PDFLib.PDFDict;
+    var PDFArray = window.PDFLib.PDFArray;
+    var nums = PDFArray.withContext(ctx);
+    for (var i = 0; i < remainingLabels.length; i++) {
+      var cur = parseInt(remainingLabels[i], 10);
+      if (isNaN(cur)) { continue; }
+      var prev = i > 0 ? parseInt(remainingLabels[i - 1], 10) : NaN;
+      if (i === 0 || isNaN(prev) || cur !== prev + 1) {
+        var dict = PDFDict.withContext(ctx);
+        dict.set(PDFName.of('S'), PDFName.of('D'));
+        dict.set(PDFName.of('St'), PDFNumber.of(cur));
+        nums.push(PDFNumber.of(i));
+        nums.push(dict);
+      }
+    }
+    var pl = PDFDict.withContext(ctx);
+    pl.set(PDFName.of('Nums'), nums);
+    doc.catalog.set(PDFName.of('PageLabels'), pl);
+  }
+  function fetchAndRemove(url, removePages){
+    return fetch(url).then(function(resp){
+      if (!resp.ok) { throw new Error('PDF 下載失敗 HTTP ' + resp.status); }
+      return resp.arrayBuffer();
+    }).then(function(buf){
+      return loadPdfLib().then(function(PDFLib){
+        return PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }).then(function(doc){
+          var origLabels = readPageLabels(doc);
+          var removeSet = {};
+          removePages.forEach(function(p){ removeSet[p] = true; });
+          var remainingLabels = origLabels.filter(function(_, i){ return !removeSet[i + 1]; });
+          var sorted = removePages.slice().sort(function(a, b){ return b - a; });
+          sorted.forEach(function(p){ if (p >= 1 && p <= doc.getPageCount()) { doc.removePage(p - 1); } });
+          rebuildPageLabels(doc, remainingLabels);
+          return doc.save();
+        });
+      });
+    }).then(function(bytes){
+      return pdfjsLib.getDocument({data: bytes}).promise;
+    });
+  }
+  var removePages = getRemovePages();
+  var docPromise = removePages
+    ? fetchAndRemove(fileUrl, removePages)
+    : pdfjsLib.getDocument({url: fileUrl}).promise;
+  docPromise.then(function(doc){
+    pdfDoc = doc;
+    numPages = doc.numPages;
+    statusBox.style.display = 'none';
+    pageInfo.textContent = '1 / ' + numPages;
+    
+    if (doc.getPageLabels) {
+      doc.getPageLabels().then(function(labels){
+        if (labels && labels.length === numPages) {
+          pageLabels = labels;
+          updateCurrentUI();
+        }
+      }).catch(function(){});
+    }
+    return doc.getPage(1);
+  }).then(function(page1){
+    var vp1 = page1.getViewport({scale: 1});
+    vp1W = vp1.width; vp1H = vp1.height;
+    var aspect = vp1W + ' / ' + vp1H;
+    for (var i = 1; i <= numPages; i++) {
+      var div = document.createElement('div');
+      div.className = 'qxpdf-page';
+      div.setAttribute('data-page', i);
+      div.style.aspectRatio = aspect;
+      div.style.width = basePageWidth() + 'px';
+      pagesBox.appendChild(div);
+      pageDivs.push(div);
+      io.observe(div);
+    }
+    applyZoomTransform();
+    renderPage(1);
+    loadOutline(pdfDoc);
+  }).catch(function(err){
+    var msg = '打不开这个 PDF。';
+    if (err && ('' + err.message).indexOf('CORS') >= 0) {
+      msg = '打不开这个 PDF，可能是跨域（CORS）问题。';
+    }
+    fail(msg);
+    tocBox.textContent = '目录没能载入。';
+  });
+})();
+</script>
+</body></html>
