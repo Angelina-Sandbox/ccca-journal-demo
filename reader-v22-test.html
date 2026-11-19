@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Reader v33 捏合測試</title>
+<title>Reader v34 捏合測試</title>
 <style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--muted:#7A6A56;--line:#E4DCC8;--fp-line:#D8CDB2}
 body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
@@ -90,7 +90,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         <a class="util-saved" href="/saved.html"><svg width="8" height="10" viewBox="4.5 2.5 15 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>書籤</a>
     </div>
     </header>
-<div id="testlog">Reader v33 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
+<div id="testlog">Reader v34 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
 <div class="qxpdf-bar">
   <span class="qxpdf-bar-left">
     <button type="button" id="qxpdfTocBtn" aria-label="目录">☰</button>
@@ -246,11 +246,26 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
       var rvp = page.getViewport({scale: scale * dpr});
       var canvas = document.createElement('canvas');
       canvas.width = rvp.width; canvas.height = rvp.height;
+      
+      
+      var oldCanvases = Array.prototype.slice.call(div.querySelectorAll('canvas'));
+      var oldLayers = Array.prototype.slice.call(div.querySelectorAll('.annotationLayer'));
       div.appendChild(canvas);
-      page.render({canvasContext: canvas.getContext('2d'), viewport: rvp});
+      var task = page.render({canvasContext: canvas.getContext('2d'), viewport: rvp});
+      if (task && task.promise) {
+        task.promise.then(function(){
+          if (myGen !== renderGen) { return; }
+          oldCanvases.forEach(function(c){ if (c.parentNode === div) { div.removeChild(c); } });
+        }).catch(function(){});
+      } else {
+        oldCanvases.forEach(function(c){ if (c.parentNode === div) { div.removeChild(c); } });
+      }
       page.getAnnotations().then(function(annotations){
         if (myGen !== renderGen) { return; } 
-        if (!annotations || !annotations.length) { return; }
+        if (!annotations || !annotations.length) {
+          oldLayers.forEach(function(l){ if (l.parentNode === div) { div.removeChild(l); } });
+          return;
+        }
         var layerDiv = document.createElement('div');
         layerDiv.className = 'annotationLayer';
         div.appendChild(layerDiv);
@@ -290,6 +305,8 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
           holder.appendChild(link);
           layerDiv.appendChild(holder);
         });
+        
+        oldLayers.forEach(function(l){ if (l.parentNode === div) { div.removeChild(l); } });
       });
     });
   }
@@ -297,7 +314,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
   function clearRendered(){
     renderGen++;
     rendered = {};
-    pageDivs.forEach(function(div){ div.innerHTML = ''; });
+    
   }
   var io = new IntersectionObserver(function(entries){
     entries.forEach(function(en){
@@ -356,8 +373,8 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
   document.getElementById('qxpdfPrev').addEventListener('click', function(){ gotoPage(curPage - 1); });
   document.getElementById('qxpdfNext').addEventListener('click', function(){ gotoPage(curPage + 1); });
   
-  var ZOOM_STEPS = [0.5, 0.625, 0.8, 1, 1.25, 1.5625, 2, 2.5, 3];
-  function maxZoom(){ return window.innerWidth <= 700 ? 3 : 2; }
+  var ZOOM_STEPS = [0.5, 0.625, 0.8, 1, 1.25, 1.5625, 2, 2.5, 3, 4];
+  function maxZoom(){ return window.innerWidth <= 700 ? 4 : 2; }
   function setZoom(z){
     
     
