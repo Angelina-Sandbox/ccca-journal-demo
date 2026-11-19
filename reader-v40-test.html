@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Reader v41 捏合測試</title>
+<title>Reader v42 捏合測試</title>
 <style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--muted:#7A6A56;--line:#E4DCC8;--fp-line:#D8CDB2}
 body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
@@ -91,7 +91,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         <a class="util-saved" href="/saved.html"><svg width="8" height="10" viewBox="4.5 2.5 15 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>書籤</a>
     </div>
     </header>
-<div id="testlog">Reader v41 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
+<div id="testlog">Reader v42 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
 <div class="qxpdf-bar">
   <span class="qxpdf-bar-left">
     <button type="button" id="qxpdfTocBtn" aria-label="目录">☰</button>
@@ -111,7 +111,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
   </span>
   <span class="qxpdf-bar-right"></span>
 </div>
-<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v41">
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v42">
   <aside class="qxpdf-side" id="qxpdfSide">
     <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
     <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
@@ -259,7 +259,10 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
     var div = pageDivs[n - 1];
     if (!div) { return; }
     pdfDoc.getPage(n).then(function(page){
-      if (myGen !== renderGen) { rendered[n] = false; return; } 
+      
+      
+      
+      if (myGen !== renderGen) { return; } 
       var dpr = window.devicePixelRatio || 1;
       var vp1 = page.getViewport({scale: 1});
       
@@ -267,7 +270,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
       
       var displayScale = basePageWidth() * zoom / vp1.width;
       var renderScale = displayScale * dpr;
-      var renderCap = window.innerWidth <= 700 ? 3 : 4;
+      var renderCap = window.innerWidth <= 700 ? 5 : 4;
       if (renderScale > renderCap) { renderScale = renderCap; }
       var rvp = page.getViewport({scale: renderScale});
       
@@ -287,13 +290,18 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
           delete renderTasks[n];
           
           
-          if (myGen !== renderGen) { rendered[n] = false; if (canvas.parentNode === div) { div.removeChild(canvas); } return; }
+          
+          
+          if (myGen !== renderGen) { if (canvas.parentNode === div) { div.removeChild(canvas); } return; }
           
           Array.prototype.slice.call(div.querySelectorAll('canvas')).forEach(function(c){ if (c !== canvas && c.parentNode === div) { div.removeChild(c); } });
         }).catch(function(){
-          delete renderTasks[n]; rendered[n] = false;
+          delete renderTasks[n];
+          
+          
           
           if (canvas.parentNode === div) { div.removeChild(canvas); }
+          if (myGen === renderGen) { rendered[n] = false; }
         });
       } else {
         oldCanvases.forEach(function(c){ if (c.parentNode === div) { div.removeChild(c); } });
@@ -307,6 +315,8 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         var layerDiv = document.createElement('div');
         layerDiv.className = 'annotationLayer';
         div.appendChild(layerDiv);
+        
+        oldLayers.forEach(function(l){ if (l.parentNode === div) { div.removeChild(l); } });
         
         
         annotations.forEach(function(a){
@@ -496,6 +506,9 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
     if (next < 0) { next = 0; }
     if (next >= ZOOM_STEPS.length) { next = ZOOM_STEPS.length - 1; }
     while (ZOOM_STEPS[next] > maxZoom() && next > 0) { next--; }
+    
+    
+    if (ZOOM_STEPS[next] === zoom) { return; }
     setZoom(ZOOM_STEPS[next]);
   }
   document.getElementById('qxpdfZoomIn').addEventListener('click', function(){ zoomStep(1); });
@@ -518,15 +531,17 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
       
       
       
+      
+      
       var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       var my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       var mr = main.getBoundingClientRect();
       var pcx = (main.scrollLeft + (mx - mr.left)) / zoom;
       var pcy = (main.scrollTop + (my - mr.top)) / zoom;
+      pagesBox.style.transformOrigin = pcx + 'px ' + pcy + 'px';
       
       var a = anchorAt(pcx, pcy);
       a.clientX = mx; a.clientY = my;
-      a.baseX = pcx; a.baseY = pcy;
       pinchAnchor = a;
     }
   }, {passive:true});
@@ -534,16 +549,11 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
     if (!pinching || e.touches.length !== 2) return;
     e.preventDefault();
     var d = pinchDist(e.touches);
-    if (pinchStartDist > 0 && pinchAnchor) {
+    if (pinchStartDist > 0) {
       pinchZoom = Math.min(maxZoom(), Math.max(0.5, pinchStartZoom * d / pinchStartDist));
       
       
       pagesBox.style.transform = 'scale(' + pinchZoom + ')';
-      var mr = main.getBoundingClientRect();
-      var tx = pinchAnchor.clientX - mr.left;
-      var ty = pinchAnchor.clientY - mr.top;
-      main.scrollLeft = Math.max(0, pinchAnchor.baseX * pinchZoom - tx);
-      main.scrollTop = Math.max(0, pinchAnchor.baseY * pinchZoom - ty);
       zoomInfo.textContent = Math.round(pinchZoom * 100) + '%';
     }
   }, {passive:false});
