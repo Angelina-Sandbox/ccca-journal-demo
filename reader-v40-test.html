@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Reader v40 捏合測試</title>
+<title>Reader v41 捏合測試</title>
 <style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--muted:#7A6A56;--line:#E4DCC8;--fp-line:#D8CDB2}
 body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
@@ -45,8 +45,8 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
 #qxpdfPages{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
 #qxpdfSpacer{width:100%;height:0}
 .qxpdf-status{text-align:center;color:var(--muted);font-size:14px;line-height:2;padding:24px 0}
-.qxpdf-page{position:relative;margin:0 auto 16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
-.qxpdf-page canvas{display:block;width:100%;height:auto}
+.qxpdf-page{position:relative;margin:0 auto 16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15);overflow:hidden}
+.qxpdf-page canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
 .qxpdf-page .annotationLayer{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:2}
 .qxpdf-page .annotationLayer .linkAnnotation{position:absolute;pointer-events:auto;cursor:pointer}
 .qxpdf-page .annotationLayer .linkAnnotation>a{position:absolute;top:0;left:0;width:100%;height:100%;display:block;background:transparent;cursor:pointer}
@@ -91,7 +91,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         <a class="util-saved" href="/saved.html"><svg width="8" height="10" viewBox="4.5 2.5 15 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>書籤</a>
     </div>
     </header>
-<div id="testlog">Reader v40 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
+<div id="testlog">Reader v41 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
 <div class="qxpdf-bar">
   <span class="qxpdf-bar-left">
     <button type="button" id="qxpdfTocBtn" aria-label="目录">☰</button>
@@ -111,7 +111,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
   </span>
   <span class="qxpdf-bar-right"></span>
 </div>
-<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v40">
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v41">
   <aside class="qxpdf-side" id="qxpdfSide">
     <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
     <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
@@ -263,9 +263,12 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
       var dpr = window.devicePixelRatio || 1;
       var vp1 = page.getViewport({scale: 1});
       
+      
+      
       var displayScale = basePageWidth() * zoom / vp1.width;
       var renderScale = displayScale * dpr;
-      if (renderScale > 4) { renderScale = 4; }
+      var renderCap = window.innerWidth <= 700 ? 3 : 4;
+      if (renderScale > renderCap) { renderScale = renderCap; }
       var rvp = page.getViewport({scale: renderScale});
       
       var divScale = basePageWidth() / vp1.width;
@@ -282,9 +285,16 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         renderTasks[n] = task;
         task.promise.then(function(){
           delete renderTasks[n];
-          if (myGen !== renderGen) { rendered[n] = false; return; }
-          oldCanvases.forEach(function(c){ if (c.parentNode === div) { div.removeChild(c); } });
-        }).catch(function(){ delete renderTasks[n]; rendered[n] = false; });
+          
+          
+          if (myGen !== renderGen) { rendered[n] = false; if (canvas.parentNode === div) { div.removeChild(canvas); } return; }
+          
+          Array.prototype.slice.call(div.querySelectorAll('canvas')).forEach(function(c){ if (c !== canvas && c.parentNode === div) { div.removeChild(c); } });
+        }).catch(function(){
+          delete renderTasks[n]; rendered[n] = false;
+          
+          if (canvas.parentNode === div) { div.removeChild(canvas); }
+        });
       } else {
         oldCanvases.forEach(function(c){ if (c.parentNode === div) { div.removeChild(c); } });
       }
@@ -352,6 +362,8 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
     });
     
   }
+  
+  var ioMargin = window.innerWidth <= 700 ? '400px 0px' : '800px 0px';
   var io = new IntersectionObserver(function(entries){
     entries.forEach(function(en){
       if (en.isIntersecting) {
@@ -359,8 +371,11 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         renderPage(n);
       }
     });
-  }, {root: main, rootMargin: '800px 0px'});
+  }, {root: main, rootMargin: ioMargin});
   var lastScrollTop = -1;
+  
+  
+  function effZoom(){ return (typeof pinching !== 'undefined' && pinching) ? pinchZoom : zoom; }
   function markCurrent(){
     if (navLock) { return; }
     
@@ -370,8 +385,9 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
     
     
     
-    var cy = (st + main.clientHeight / 2) / zoom;
-    var cx = (main.scrollLeft + main.clientWidth / 2) / zoom;
+    var ez = effZoom();
+    var cy = (st + main.clientHeight / 2) / ez;
+    var cx = (main.scrollLeft + main.clientWidth / 2) / ez;
     var a = anchorAt(cx, cy);
     var best = a.page;
     if (best !== curPage) {
@@ -501,15 +517,16 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
       pinchZoom = zoom;
       
       
+      
       var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       var my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       var mr = main.getBoundingClientRect();
       var pcx = (main.scrollLeft + (mx - mr.left)) / zoom;
       var pcy = (main.scrollTop + (my - mr.top)) / zoom;
-      pagesBox.style.transformOrigin = pcx + 'px ' + pcy + 'px';
       
       var a = anchorAt(pcx, pcy);
       a.clientX = mx; a.clientY = my;
+      a.baseX = pcx; a.baseY = pcy;
       pinchAnchor = a;
     }
   }, {passive:true});
@@ -517,10 +534,16 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
     if (!pinching || e.touches.length !== 2) return;
     e.preventDefault();
     var d = pinchDist(e.touches);
-    if (pinchStartDist > 0) {
+    if (pinchStartDist > 0 && pinchAnchor) {
       pinchZoom = Math.min(maxZoom(), Math.max(0.5, pinchStartZoom * d / pinchStartDist));
       
+      
       pagesBox.style.transform = 'scale(' + pinchZoom + ')';
+      var mr = main.getBoundingClientRect();
+      var tx = pinchAnchor.clientX - mr.left;
+      var ty = pinchAnchor.clientY - mr.top;
+      main.scrollLeft = Math.max(0, pinchAnchor.baseX * pinchZoom - tx);
+      main.scrollTop = Math.max(0, pinchAnchor.baseY * pinchZoom - ty);
       zoomInfo.textContent = Math.round(pinchZoom * 100) + '%';
     }
   }, {passive:false});
