@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Reader v34 捏合測試</title>
+<title>Reader v35 捏合測試</title>
 <style>
 :root{--gold:#B7791F;--blue:#3E5F8A;--brown:#4A3728;--cream:#FAF6ED;--card:#FFFDF8;--muted:#7A6A56;--line:#E4DCC8;--fp-line:#D8CDB2}
 body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
@@ -90,7 +90,7 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         <a class="util-saved" href="/saved.html"><svg width="8" height="10" viewBox="4.5 2.5 15 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>書籤</a>
     </div>
     </header>
-<div id="testlog">Reader v34 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
+<div id="testlog">Reader v35 捏合測試：雙指捏合應順滑放大、不閃白；放開後貼到最近檔位重畫。開啟 ?issue=2025-fall。</div>
 <div class="qxpdf-bar">
   <span class="qxpdf-bar-left">
     <button type="button" id="qxpdfTocBtn" aria-label="目录">☰</button>
@@ -243,7 +243,11 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
       var vp1 = page.getViewport({scale: 1});
       var scale = pageWidth() / vp1.width;
       var vp = page.getViewport({scale: scale});
-      var rvp = page.getViewport({scale: scale * dpr});
+      
+      
+      var renderScale = scale * dpr;
+      if (renderScale > 4) { renderScale = 4; }
+      var rvp = page.getViewport({scale: renderScale});
       var canvas = document.createElement('canvas');
       canvas.width = rvp.width; canvas.height = rvp.height;
       
@@ -375,27 +379,45 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
   
   var ZOOM_STEPS = [0.5, 0.625, 0.8, 1, 1.25, 1.5625, 2, 2.5, 3, 4];
   function maxZoom(){ return window.innerWidth <= 700 ? 4 : 2; }
+  
+  function anchorAt(cx, cy){
+    var a = {page: curPage, fracX: 0.5, fracY: 0};
+    for (var i = 0; i < pageDivs.length; i++) {
+      var d = pageDivs[i];
+      var top = d.offsetTop, bottom = top + d.offsetHeight;
+      if (cy >= top && cy < bottom) {
+        a.page = i + 1;
+        a.fracY = d.offsetHeight ? (cy - top) / d.offsetHeight : 0;
+        a.fracX = d.offsetWidth ? (cx - d.offsetLeft) / d.offsetWidth : 0.5;
+        return a;
+      }
+      if (cy < top) { a.page = i + 1; a.fracY = 0; a.fracX = 0.5; return a; }
+      if (i === pageDivs.length - 1) { a.page = i + 1; a.fracY = 1; a.fracX = 0.5; }
+    }
+    return a;
+  }
+  var pinchAnchor = null; 
   function setZoom(z){
     
     
     
     pagesBox.style.transform = '';
     pagesBox.style.transformOrigin = '';
-    var cx = main.scrollLeft + main.clientWidth / 2;
-    var cy = main.scrollTop + main.clientHeight / 2;
-    var anchorPage = curPage, fracX = 0.5, fracY = 0;
-    for (var i = 0; i < pageDivs.length; i++) {
-      var d = pageDivs[i];
-      var top = d.offsetTop, bottom = top + d.offsetHeight;
-      if (cy >= top && cy < bottom) {
-        anchorPage = i + 1;
-        fracY = d.offsetHeight ? (cy - top) / d.offsetHeight : 0;
-        fracX = d.offsetWidth ? (cx - d.offsetLeft) / d.offsetWidth : 0.5;
-        break;
-      }
-      if (cy < top) { anchorPage = i + 1; fracY = 0; fracX = 0.5; break; }
-      if (i === pageDivs.length - 1) { anchorPage = i + 1; fracY = 1; fracX = 0.5; }
+    var anchor, tx, ty;
+    if (pinchAnchor) {
+      anchor = pinchAnchor;
+      pinchAnchor = null;
+      var mr = main.getBoundingClientRect();
+      tx = anchor.clientX - mr.left;
+      ty = anchor.clientY - mr.top;
+    } else {
+      var cx = main.scrollLeft + main.clientWidth / 2;
+      var cy = main.scrollTop + main.clientHeight / 2;
+      anchor = anchorAt(cx, cy);
+      tx = main.clientWidth / 2;
+      ty = main.clientHeight / 2;
     }
+    var anchorPage = anchor.page, fracX = anchor.fracX, fracY = anchor.fracY;
     var stayPage = anchorPage;
     zoom = Math.min(maxZoom(), Math.max(0.5, z));
     zoomInfo.textContent = Math.round(zoom * 100) + '%';
@@ -411,8 +433,8 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
         if (d2 && d2.offsetHeight) {
           var nx = d2.offsetLeft + fracX * d2.offsetWidth;
           var ny = d2.offsetTop + fracY * d2.offsetHeight;
-          main.scrollLeft = Math.max(0, nx - main.clientWidth / 2);
-          main.scrollTop = Math.max(0, ny - main.clientHeight / 2);
+          main.scrollLeft = Math.max(0, nx - tx);
+          main.scrollTop = Math.max(0, ny - ty);
           curPage = anchorPage;
           updateCurrentUI();
         } else {
@@ -454,6 +476,13 @@ body{margin:0;background:var(--cream);color:var(--brown);font-family:-apple-syst
       var my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       var r = pagesBox.getBoundingClientRect();
       pagesBox.style.transformOrigin = (mx - r.left) + 'px ' + (my - r.top) + 'px';
+      
+      var mr = main.getBoundingClientRect();
+      var pcx = main.scrollLeft + (mx - mr.left);
+      var pcy = main.scrollTop + (my - mr.top);
+      var a = anchorAt(pcx, pcy);
+      a.clientX = mx; a.clientY = my;
+      pinchAnchor = a;
     }
   }, {passive:true});
   main.addEventListener('touchmove', function(e){
