@@ -1,0 +1,1016 @@
+{{ define "main" }}
+<style>
+/* 讀者版全屏：藏掉站內導航，只留刊頭（點刊頭回首頁）；版面放大 */
+.wrap{max-width:none;padding:0}
+.site-head{display:none !important}
+.foot{display:none !important}
+.main-nav{display:none !important}
+.qxpdf-note{text-align:center;color:var(--muted);font-size:14px;margin:-8px 0 14px}
+.qxpdf-bar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:0 0 10px;padding:10px 12px 0}
+.qxpdf-bar-left{display:flex;gap:10px;align-items:center;min-width:0}
+.qxpdf-title{font-size:14px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qxpdf-bar-center{display:flex;gap:28px;align-items:center}
+.qxpdf-bar-pages{display:flex;gap:8px;align-items:center}
+.qxpdf-bar-zoom{display:flex;gap:8px;align-items:center}
+.qxpdf-bar-right{}
+.qxpdf-bar button{font-size:15px;font-weight:700;line-height:1;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:999px;padding:2px 10px;cursor:pointer;text-decoration:none;touch-action:manipulation}
+.qxpdf-bar input{font-size:15px;line-height:1;border:1px solid var(--gold);color:var(--brown);background:var(--card);border-radius:999px;padding:2px 8px;width:64px;text-align:center;touch-action:manipulation}
+.qxpdf-bar button:hover{background:var(--gold);color:#fff;text-decoration:none}
+.qxpdf-pageinfo{font-size:14px;color:var(--muted);margin:0 4px}
+.qxpdf-body{display:flex;gap:8px;align-items:flex-start;padding:0}
+.qxpdf-side{width:240px;flex:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px 16px;max-height:calc(100vh - 190px);overflow-y:auto;margin-left:10px}
+.qxpdf-side-head{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:bold;color:var(--title-c);margin-bottom:8px}
+.qxpdf-side-head button{border:none;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 2px}
+.qxpdf-toc{font-size:14px;line-height:1.9}
+.qxpdf-toc a{color:var(--brown);text-decoration:none}
+.qxpdf-toc a:hover{color:var(--gold);text-decoration:underline}
+.qxpdf-toc a.on{color:var(--gold);font-weight:bold;border-left:3px solid var(--gold);padding-left:8px}
+.qxpdf-toc .lvl1{padding-left:16px}
+.qxpdf-toc .qx-toc-row{display:flex;align-items:center;gap:2px}
+.qxpdf-toc .qx-toc-row a{flex:1;min-width:0}
+.qx-toc-arrow{flex:none;width:18px;height:18px;padding:0;border:none;background:none;color:var(--gold);font-size:9px;line-height:1;cursor:pointer;text-align:center;transition:transform .18s}
+.qx-toc-arrow.open{transform:rotate(90deg)}
+.qxpdf-bar input#qxpdfPageInfo{width:44px}
+/* v57：目錄鈕改成 PDF 頁尾那個「三點三線」圖示（SVG，圓點＋橫線），
+   按鈕用 flex 置中——原來 ☰ 文字偏下就是字形本身不在行框正中，SVG 不會有這問題 */
+#qxpdfTocBtn{display:inline-flex;align-items:center;justify-content:center;padding:2px 8px}
+#qxpdfTocBtn svg{width:15px;height:15px;display:block;fill:currentColor}
+.qxpdf-main{flex:1;min-width:0;position:relative;background:var(--cream);border:1px solid var(--line);border-left:none;border-radius:0;height:calc(100vh - 190px);overflow-y:auto;overflow-x:auto;overflow-anchor:none;padding:0;touch-action:pan-x pan-y;scrollbar-width:thin;scrollbar-color:var(--gold) var(--card)}
+.qxpdf-main::-webkit-scrollbar{width:10px;height:10px}
+.qxpdf-main::-webkit-scrollbar-track{background:var(--card)}
+.qxpdf-main::-webkit-scrollbar-thumb{background:var(--gold);border-radius:6px;border:2px solid var(--card)}
+.qxpdf-side{scrollbar-width:thin;scrollbar-color:var(--gold) var(--card)}
+.qxpdf-side::-webkit-scrollbar{width:10px}
+.qxpdf-side::-webkit-scrollbar-track{background:var(--card)}
+.qxpdf-side::-webkit-scrollbar-thumb{background:var(--gold);border-radius:6px;border:2px solid var(--card)}
+#qxpdfPages{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;touch-action:pan-x pan-y}
+#qxpdfSpacer{width:100%;height:0}
+.qxpdf-status{text-align:center;color:var(--muted);font-size:14px;line-height:2;padding:24px 0}
+.qxpdf-page{position:relative;margin:0 auto 16px;background:#fff;overflow:hidden;touch-action:pan-x pan-y}
+.qxpdf-page canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
+/* v60：局部放大——畫布只是一小塊（位置、大小由 JS 寫 inline），不要撐滿整頁 */
+.qxpdf-page canvas.qxpdf-tile{width:auto;height:auto;}
+.qxpdf-page .annotationLayer{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:2}
+.qxpdf-page .annotationLayer .linkAnnotation{position:absolute;pointer-events:auto;cursor:pointer}
+.qxpdf-page .annotationLayer .linkAnnotation>a{position:absolute;top:0;left:0;width:100%;height:100%;display:block;background:transparent;cursor:pointer}
+.qxpdf-page .annotationLayer .linkAnnotation>a:hover{background:rgba(255,215,0,.18)}
+.qxpdf-body.qxpdf-sideclosed .qxpdf-side{display:none}
+@media (max-width:700px){
+  .qxpdf-body{display:block}
+  .qxpdf-bar{grid-template-columns:1fr auto 1fr;overflow-x:auto;gap:6px;padding-bottom:2px}
+  .qxpdf-bar button{font-size:13px;font-weight:400;padding:5px 13px;touch-action:manipulation}
+  .qxpdf-bar input{font-size:13px;padding:5px 8px;width:56px}
+  .qxpdf-bar-center{gap:6px}
+  .qxpdf-bar-pages,.qxpdf-bar-zoom{gap:6px}
+  .qxpdf-title{display:none}
+  .qxpdf-pageinfo{font-size:12px;margin:0 2px}
+  .qxpdf-side{position:fixed;left:0;top:0;bottom:0;width:max-content;min-width:220px;max-width:min(85vw,320px);max-height:none;border-radius:0;z-index:60;box-shadow:4px 0 24px rgba(0,0,0,.25);display:none;margin-left:0}
+  .qxpdf-body:not(.qxpdf-sideclosed) .qxpdf-side{display:block;animation:qxPdfSideIn .22s ease-out}
+  @keyframes qxPdfSideIn { from { transform:translateX(-100%); } to { transform:translateX(0); } }
+  .qxpdf-scrim{display:none}
+  .qxpdf-body:not(.qxpdf-sideclosed) .qxpdf-scrim{display:block;position:fixed;inset:0;z-index:55;background:rgba(30,22,12,.38)}
+  .qxpdf-main{height:calc(100dvh - 40px);scrollbar-width:none}
+  .qxpdf-main::-webkit-scrollbar{display:none}
+  .qxpdf-side{scrollbar-width:none}
+  .qxpdf-side::-webkit-scrollbar{display:none}
+}
+</style>
+<div class="qxpdf-bar">
+  <span class="qxpdf-bar-left">
+    <button type="button" id="qxpdfTocBtn" aria-label="目录"><svg viewBox="0 0 16 12" aria-hidden="true"><circle cx="3" cy="3" r="1.2"/><rect x="6.5" y="2.2" width="7" height="1.6" rx="0.8"/><circle cx="3" cy="6" r="1.2"/><rect x="6.5" y="5.2" width="7" height="1.6" rx="0.8"/><circle cx="3" cy="9" r="1.2"/><rect x="6.5" y="8.2" width="7" height="1.6" rx="0.8"/></svg></button>
+    <span class="qxpdf-title" id="qxpdfTitle">整本雜誌</span>
+  </span>
+  <span class="qxpdf-bar-center">
+    <span class="qxpdf-bar-pages">
+      <input type="text" id="qxpdfPageInfo" inputmode="numeric" autocomplete="off" aria-label="当前页码">
+      <span class="qxpdf-pageinfo" id="qxpdfPageTotal"> / —</span>
+    </span>
+    <span class="qxpdf-bar-zoom">
+      <button type="button" id="qxpdfZoomOut" aria-label="缩小">−</button>
+      <span class="qxpdf-pageinfo" id="qxpdfZoomInfo">100%</span>
+      <button type="button" id="qxpdfZoomIn" aria-label="放大">+</button>
+    </span>
+  </span>
+  <span class="qxpdf-bar-right"></span>
+</div>
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v60">
+  <aside class="qxpdf-side" id="qxpdfSide">
+    <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
+    <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
+  </aside>
+  <div class="qxpdf-scrim" id="qxpdfScrim"></div>
+  <div class="qxpdf-main" id="qxpdfMain">
+    <div class="qxpdf-status" id="qxpdfStatus">正在打开…</div>
+    <div id="qxpdfPages"></div>
+    <div id="qxpdfSpacer"></div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(function(){
+  var body = document.getElementById('qxpdfBody');
+  var side = document.getElementById('qxpdfSide');
+  var scrim = document.getElementById('qxpdfScrim');
+  // 手機預設收起目錄（HTML 已帶 qxpdf-sideclosed），電腦才打開
+  if (window.innerWidth > 700) { body.classList.remove('qxpdf-sideclosed'); }
+  var tocBox = document.getElementById('qxpdfToc');
+  var main = document.getElementById('qxpdfMain');
+  var pagesBox = document.getElementById('qxpdfPages');
+  var spacer = document.getElementById('qxpdfSpacer');
+  var statusBox = document.getElementById('qxpdfStatus');
+  var pageInfo = document.getElementById('qxpdfPageInfo');
+  var pageTotal = document.getElementById('qxpdfPageTotal');
+  var zoomInfo = document.getElementById('qxpdfZoomInfo');
+  var params = new URLSearchParams(window.location.search);
+  var issue = params.get('issue') || '2026-fall';
+  var ISSUE_TITLES = {'2026-fall':'2026 秋季刊','2026-spring':'2026 春季刊','2025-fall':'2025 秋季刊'};
+  var titleEl = document.getElementById('qxpdfTitle');
+  if (titleEl) { titleEl.textContent = ISSUE_TITLES[issue] || issue; }
+  var fileUrl = '/api/reader-pdf?issue=' + encodeURIComponent(issue) + '&v=60';
+  // 檢視器自己管捏合縮放：關掉 Safari 自己的整頁捏合，兩個同時跑會打架跳頁；
+  // 只改檢視器這一頁的 viewport，不動全站。
+  // 另外擋掉 Safari 的手勢事件（gesturestart）：它會把整頁（含工具列按鈕）一起放大，
+  // v42 尾段就是它突然把整個網頁變大了
+  var vpMeta = document.querySelector('meta[name="viewport"]');
+  if (vpMeta) { vpMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'); }
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function(ev){
+    document.addEventListener(ev, function(e){ e.preventDefault(); }, {passive: false});
+  });
+  // 讀者版不提供下載：禁右鍵選單（檔案本身仍是真 PDF，放大清楚）
+  body.addEventListener('contextmenu', function(ev){ ev.preventDefault(); });
+  function setSide(open){
+    var wBefore = main.clientWidth;
+    body.classList.toggle('qxpdf-sideclosed', !open);
+    if (window.innerWidth <= 700) { document.body.style.overflow = open ? 'hidden' : ''; }
+    // v59：目錄開合會改主欄寬（電腦版），主欄寬變了頁面跟著變寬、看得更舒服；
+    // 重算＋重畫＋捲回原位，跟視窗 resize 一樣。手機版目錄是抽屜，主欄寬不變，不用重算。
+    if (main.clientWidth !== wBefore) { refitOnWidthChange(); }
+  }
+  function toggleSide(){
+    setSide(body.classList.contains('qxpdf-sideclosed'));
+  }
+  document.getElementById('qxpdfTocBtn').addEventListener('click', toggleSide);
+  document.getElementById('qxpdfSideClose').addEventListener('click', function(){ setSide(false); });
+  if (scrim) { scrim.addEventListener('click', function(){ setSide(false); }); }
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !body.classList.contains('qxpdf-sideclosed')) { setSide(false); }
+  });
+  function fail(msg){
+    statusBox.style.display = 'block';
+    statusBox.textContent = msg;
+  }
+  if (typeof pdfjsLib === 'undefined') {
+    fail('查看器没能载入（可能是网络问题）。');
+    tocBox.textContent = '目录没能载入。';
+    return;
+  }
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  var pdfDoc = null, numPages = 0, zoom = 1, curPage = 1;
+  var pageDivs = [], rendered = {}, tocLinks = [];
+  // v60：局部放大——每頁只畫看得見的那一塊。tileState 記每頁現在畫的是哪一塊
+  // （底座標＋當時倍率）；TILE_MARGIN 是向外多畫的邊（螢幕 px），捲一點不用重畫、
+  // 附近頁先畫好；rendering 記哪幾頁正在畫（同一頁同時開兩輪會互相把畫布拿掉、整頁變空白）
+  var tileState = {};
+  var rendering = {};
+  var TILE_MARGIN = 400;
+  var vp1W = 0, vp1H = 0;
+  var pageLabels = null;
+  // 工具列顯示印刷頁碼（PDF 自帶的 page label），沒有 label 就用 PDF 頁碼
+  function displayPage(n){
+    if (pageLabels && pageLabels[n - 1] !== undefined && pageLabels[n - 1] !== null && pageLabels[n - 1] !== '') {
+      return pageLabels[n - 1];
+    }
+    return String(n);
+  }
+  // 程式翻頁/縮放時鎖住 markCurrent，避免 scroll 事件用舊 scrollTop 把頁碼算回去
+  var navLock = false, navTimer = null;
+  function lockNav(){
+    navLock = true;
+    if (navTimer) { clearTimeout(navTimer); }
+    navTimer = setTimeout(function(){ navLock = false; }, 300);
+  }
+  // 讓檢視器底邊正好卡在視窗底邊（橫向捲軸才看得到）：量實際位置來定高度，
+  // 不用寫死的 190px——不同瀏覽器刊頭、字體高度不一樣，寫死會跑掉
+  function fitViewerHeight(){
+    var r = main.getBoundingClientRect();
+    var h = window.innerHeight - r.top;
+    if (h < 300) { h = 300; }
+    main.style.height = h + 'px';
+    side.style.maxHeight = h + 'px';
+  }
+  window.addEventListener('resize', fitViewerHeight);
+  window.addEventListener('load', fitViewerHeight);
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitViewerHeight); }
+  fitViewerHeight();
+  // v40：放大不再改頁面寬度（改寬度會整頁重新排版、就是你看到的 refresh）。
+  // 頁面 div 永遠是底寬（主欄寬），放大只用顯示卡 transform 把整疊頁放大，
+  // 捲動範圍由底下那個看不見的 spacer 撐出來。清楚的圖在背後重畫好再換上去，
+  // 版面不動、位置不動、所以不 refresh，跟 Safari 原生一樣。
+  function basePageWidth(){
+    var w = main.clientWidth;
+    if (w < 100) { w = 300; }
+    return Math.round(w);
+  }
+  function updatePageWidths(){
+    var w = basePageWidth() + 'px';
+    pageDivs.forEach(function(d){ d.style.width = w; });
+  }
+  // 底下內容總高（transform 不影響 offsetHeight，讀到的是底尺寸）
+  function baseContentHeight(){
+    return pagesBox.offsetHeight || 0;
+  }
+  // 把 transform 和 spacer 一起設到目前 zoom：顯示放大＋捲動範圍對上
+  function applyZoomTransform(){
+    // v47：縮到比 100% 小時，整塊往右挪半格、居中。之前 origin (0,0) 讓它全貼
+    // 左邊，只佔左半邊螢幕。放大（zoom>=1）不挪，照常從左邊開始、靠捲動看。
+    var bw = basePageWidth();
+    var dx = zoom < 1 ? Math.round(bw * (1 - zoom) / 2) : 0;
+    pagesBox.style.transform = dx ? ('translateX(' + dx + 'px) scale(' + zoom + ')') : ('scale(' + zoom + ')');
+    pagesBox.style.transformOrigin = '0 0';
+    spacer.style.width = Math.round(bw * zoom) + 'px';
+    spacer.style.height = Math.round(baseContentHeight() * zoom) + 'px';
+  }
+  var linkService = {
+    goToDestination: function(dest){
+      destToPage(dest).then(function(pg){ if (pg) { gotoPage(pg); } });
+    },
+    navigateTo: function(dest){ this.goToDestination(dest); },
+    getDestinationHash: function(dest){ return '#'; },
+    getAnchorUrl: function(hash){ return hash; },
+    addLinkAttributes: function(link, url, newWindow){
+      if (url) { link.href = url; }
+      if (newWindow) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+    },
+    executeNamedAction: function(){},
+    isPageVisible: function(){ return true; },
+    isPageCached: function(){ return true; },
+    goToPage: function(n){ gotoPage(n); }
+  };
+  // v60：算第 n 頁現在要畫哪一塊（底座標）。視窗向外擴 TILE_MARGIN 螢幕 px
+  // （換成底座標是除以倍率：倍率越大，那塊在底座標裡越小）：
+  // 看得見的畫，附近的也先畫好；太遠的回 null，不畫。
+  function regionToRender(n){
+    var div = pageDivs[n - 1];
+    if (!div) {return null; }
+    var bw = basePageWidth(), bh = div.offsetHeight;
+    if (!bh) {return null; }
+    var M = TILE_MARGIN / zoom;
+    // zoom<1 時整塊往右挪半格居中（跟 applyZoomTransform 的 dx 一致）
+    var dx = zoom < 1 ? Math.round(bw * (1 - zoom) / 2) : 0;
+    var x0 = (main.scrollLeft - dx) / zoom - M;
+    var x1 = (main.scrollLeft + main.clientWidth - dx) / zoom + M;
+    var y0 = main.scrollTop / zoom - div.offsetTop - M;
+    var y1 = (main.scrollTop + main.clientHeight) / zoom - div.offsetTop + M;
+    var rx = Math.max(0, Math.floor(x0)), ry = Math.max(0, Math.floor(y0));
+    var rx1 = Math.min(bw, Math.ceil(x1)), ry1 = Math.min(bh, Math.ceil(y1));
+    if (rx1 <= rx || ry1 <= ry) {return null; }
+
+    return {rx: rx, ry: ry, rw: rx1 - rx, rh: ry1 - ry};
+  }
+  // 已畫的那塊（a）是不是把現在要畫的那塊（b）整個包住了——包住了就不用重畫
+  function regionCovers(a, b){
+    return a && b && a.zoom === zoom &&
+      a.rx <= b.rx && a.ry <= b.ry &&
+      a.rx + a.rw >= b.rx + b.rw && a.ry + a.rh >= b.ry + b.rh;
+  }
+  function renderPage(n){
+
+    if (rendered[n] && regionCovers(tileState[n], regionToRender(n))) {return; }
+    var region = regionToRender(n);
+    if (!region) {return; }
+    // v60 修：同一頁已經在畫了就別再開一輪——放大和捲動會同時叫 renderPage，
+    // 兩輪並行畫完會互相把對方的畫布拿掉，最後一張都不剩
+    if (rendering[n]) {return; }
+    rendering[n] = true;
+    rendered[n] = true;
+
+    var myGen = renderGen;
+    var div = pageDivs[n - 1];
+    if (!div) { return; }
+    pdfDoc.getPage(n).then(function(page){
+      // 世代過了（又縮放了）：直接丟掉，別再畫上去。
+      // 注意：這裡不動 rendered[n]——新一輪的 renderPage 已經把 rendered[n] 設成 true，
+      // 這裡要是設回 false，會讓同一頁又開一個重複渲染，舊圖就堆起來了
+      if (myGen !== renderGen) { return; } // 縮放後舊的渲染直接丟掉，別再畫上去
+      var dpr = window.devicePixelRatio || 1;
+      var vp1 = page.getViewport({scale: 1});
+      // v60：局部放大——只畫看得見的那一小塊，不再整頁一張大圖。
+      // 顯示倍率跟原來一樣（底寬 × zoom × DPR），但不再封頂 4：
+      // 一塊只有視窗那麼大，800% 也只畫 5% 的頁面，不會把記憶體撐爆。
+      var displayScale = basePageWidth() * zoom / vp1.width;
+      var renderScale = displayScale * dpr;
+      var rvp = page.getViewport({scale: renderScale});
+      // 鏈接層座標用底尺寸（div 本身就是底寬，transform 會連鏈接一起放大，不用算兩次）
+      var divScale = basePageWidth() / vp1.width;
+      var vp = page.getViewport({scale: divScale});
+      // 畫布只做到要畫的那一塊（底座標），不在整頁：
+      // 背面像素 = 那塊 × zoom × DPR（放大後在螢幕上的尺寸才清楚），
+      // CSS 大小就是那塊本身，擺在 div 裡對應的位置。
+      var canvas = document.createElement('canvas');
+      canvas.className = 'qxpdf-tile';
+      canvas.width = Math.max(1, Math.round(region.rw * zoom * dpr));
+      canvas.height = Math.max(1, Math.round(region.rh * zoom * dpr));
+      canvas.style.left = region.rx + 'px';
+      canvas.style.top = region.ry + 'px';
+      canvas.style.width = region.rw + 'px';
+      canvas.style.height = region.rh + 'px';
+      // 舊的 canvas 和鏈接層先留著，等新畫好再拿掉：鬆手重畫時舊圖還在（只是稍糊），
+      // 不留白、不閃一下，跟 Safari 原生一樣
+      var oldCanvases = Array.prototype.slice.call(div.querySelectorAll('canvas'));
+      var oldLayers = Array.prototype.slice.call(div.querySelectorAll('.annotationLayer'));
+      div.appendChild(canvas);
+      // 把那塊的左上角平移到畫布原點（那塊在放大後頁面上的 device px 位置）
+      var task = page.render({canvasContext: canvas.getContext('2d'), viewport: rvp,
+        transform: [1, 0, 0, 1, -region.rx * zoom * dpr, -region.ry * zoom * dpr]});
+      if (task && task.promise) {
+        renderTasks[n] = task;
+        task.promise.then(function(){
+          delete renderTasks[n];
+          delete rendering[n];
+          // 世代過了（又縮放了）：這張剛畫好的圖是舊倍率的，直接拿掉，別留在 div 裡佔記憶體；
+          // 之前這裡只 return 不拿 canvas，來回放縮幾次就堆一堆舊圖把手機撐黑屏。
+          // 注意：這裡不動 rendered[n]——新一輪的 renderPage 已經把它設成 true，
+          // 設回 false 會讓同一頁又開一個重複渲染，舊圖就堆起來了
+          if (myGen !== renderGen) { if (canvas.parentNode === div) { div.removeChild(canvas); } return; }
+          // v60 修：這張畫布已經不在 div 裡（被另一輪拿掉了），就別再動其他畫布，
+          // 不然會把留下的那張也拿掉、整頁變空白
+          if (canvas.parentNode !== div) { return; }
+          // 新圖畫好了，把 div 裡其他舊 canvas 全拿掉，只留這一張（不管舊圖是何時留下的）
+          Array.prototype.slice.call(div.querySelectorAll('canvas')).forEach(function(c){ if (c !== canvas && c.parentNode === div) { div.removeChild(c); } });
+          // v60：記下這一頁現在畫的是哪一塊，捲動時舊的那塊包得住新的就不用重畫
+          tileState[n] = {rx: region.rx, ry: region.ry, rw: region.rw, rh: region.rh, zoom: zoom};
+        }).catch(function(){
+          delete renderTasks[n];
+          delete rendering[n];
+          // 渲染被取消/失敗：這張沒畫完的 canvas 也拿掉，別留著佔記憶體。
+          // 世代過了（被新一輪取代）就不動 rendered[n]，免得同一頁又開重複渲染；
+          // 只有真正失敗（世代沒過）才清掉標記，讓之後可以重試
+          if (canvas.parentNode === div) { div.removeChild(canvas); }
+          if (myGen === renderGen) { rendered[n] = false; delete tileState[n]; }
+        });
+      } else {
+        oldCanvases.forEach(function(c){ if (c.parentNode === div) { div.removeChild(c); } });
+      }
+      page.getAnnotations().then(function(annotations){
+        if (myGen !== renderGen) { return; } // 縮放後舊的鏈接層直接丟掉
+        // v60：鏈接層是整頁的（底座標），跟畫的那一塊無關，已經有了就不用重畫——
+        // 捲動重畫區域時再建一層，鏈接會疊著
+        if (div.querySelector('.annotationLayer')) { return; }
+        if (!annotations || !annotations.length) {
+          oldLayers.forEach(function(l){ if (l.parentNode === div) { div.removeChild(l); } });
+          return;
+        }
+        var layerDiv = document.createElement('div');
+        layerDiv.className = 'annotationLayer';
+        div.appendChild(layerDiv);
+        // 新鏈接層畫好了，把舊的鏈接層全拿掉（不然每重畫一次就多一層，鏈接會疊著）
+        oldLayers.forEach(function(l){ if (l.parentNode === div) { div.removeChild(l); } });
+        // 手動畫鏈接層（不用 PDF.js AnnotationLayer）：按 annotation 的 rect
+        // 換算成顯示座標，直接放一個可點的 <a>，點了就跳到對應頁
+        annotations.forEach(function(a){
+          if (a.subtype !== 'Link' || !a.rect) { return; }
+          var r = vp.convertToViewportRectangle(a.rect);
+          var x = Math.min(r[0], r[2]), y = Math.min(r[1], r[3]);
+          var w = Math.abs(r[2] - r[0]), h = Math.abs(r[3] - r[1]);
+          if (w < 1 || h < 1) { return; }
+          var holder = document.createElement('div');
+          holder.className = 'linkAnnotation';
+          holder.style.left = x + 'px';
+          holder.style.top = y + 'px';
+          holder.style.width = w + 'px';
+          holder.style.height = h + 'px';
+          var link = document.createElement('a');
+          link.href = 'javascript:void(0)';
+          if (a.url) {
+            link.href = a.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+          } else if (a.dest) {
+            link.addEventListener('click', function(ev){
+              ev.preventDefault();
+              // v48：兩指還在螢幕上捏著，鏈接一律不跳。之前只擋鬆手後 500ms，
+              // 沒擋捏的當下——目錄頁整頁都是鏈接，兩指一放上去就壓到鏈接跳頁。
+              if (pinching) { return; }
+              if (Date.now() - lastPinchEndTime < 500) { return; } // 剛捏完鬆手 500ms 內的點按是誤觸，不跳頁
+              destToPage(a.dest).then(function(pg){ if (pg) { gotoPage(pg); } });
+            });
+          } else if (a.action) {
+            link.addEventListener('click', function(ev){
+              ev.preventDefault();
+              // v48：兩指還在螢幕上捏著，鏈接一律不跳（同上）。
+              if (pinching) { return; }
+              if (Date.now() - lastPinchEndTime < 500) { return; } // 剛捏完鬆手 500ms 內的點按是誤觸，不跳頁
+              if (a.action && a.action.D) {
+                destToPage(a.action.D).then(function(pg){ if (pg) { gotoPage(pg); } });
+              }
+            });
+          }
+          holder.appendChild(link);
+          layerDiv.appendChild(holder);
+        });
+        // 新鏈接層畫好後，把舊層拿掉
+        oldLayers.forEach(function(l){ if (l.parentNode === div) { div.removeChild(l); } });
+      });
+    }).catch(function(){
+      // v60：取頁失敗也要把鎖放掉，不然那頁以後都畫不了
+      delete rendering[n];
+      if (myGen === renderGen) { rendered[n] = false; delete tileState[n]; }
+    });
+  }
+  var renderGen = 0; // 渲染世代：縮放時 +1，舊的非同步渲染結果直接丟棄
+  var renderTasks = {}; // 進行中的 PDF.js 渲染任務（頁碼 → task），縮放時要取消，否則連放連縮會堆一堆任務把 Safari 記憶體撐爆閃退
+  function clearRendered(){
+    renderGen++;
+    rendered = {};
+    tileState = {}; // v60：倍率變了，舊的那幾塊都作廢
+    // 取消所有還在跑的舊渲染任務：連放連縮時舊任務不取消會一直佔記憶體，最後 Safari 直接閃退黑屏
+    Object.keys(renderTasks).forEach(function(k){
+      try { if (renderTasks[k] && renderTasks[k].cancel) { renderTasks[k].cancel(); } } catch (e) {}
+      delete renderTasks[k];
+    });
+    // 不清空 div：舊 canvas 先留著，等 renderPage 新畫好再拿掉，縮放鬆手不閃白
+  }
+  // v60：捲動停了，把現在看得見的那幾頁的區域重畫（舊的那塊包不住新的才畫）。
+  // 只看當前頁前後 4 頁，夠了（看得見的頁一定在這範圍裡）。
+  var renderScrollTimer = null;
+  function renderVisibleRegions(){
+    for (var n = Math.max(1, curPage - 4); n <= Math.min(numPages, curPage + 4); n++) {
+      renderPage(n);
+    }
+  }
+  main.addEventListener('scroll', function(){
+    if (renderScrollTimer) { clearTimeout(renderScrollTimer); }
+    renderScrollTimer = setTimeout(renderVisibleRegions, 150);
+  });
+  // 手機預渲染範圍小一點（400px）：一次少畫幾頁，省記憶體，防來回放縮黑屏
+  // v44：手機少畫幾頁（400px→200px），一次只留看得見的那一兩頁在記憶體裡，
+  // 來回放縮不容易把手機撐到重載；重載就是影片尾段整個網頁突然變大那一下
+  var ioMargin = window.innerWidth <= 700 ? '200px 0px' : '800px 0px';
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (en.isIntersecting) {
+        var n = parseInt(en.target.getAttribute('data-page'), 10);
+        renderPage(n);
+      }
+    });
+  }, {root: main, rootMargin: ioMargin});
+  var lastScrollTop = -1;
+  // 捏合進行中，有效倍率是 pinchZoom（全域 zoom 要鬆手才更新）；
+  // markCurrent 若用舊 zoom 算，捏的過程頁碼會亂跳到別頁
+  function effZoom(){ return (typeof pinching !== 'undefined' && pinching) ? pinchZoom : zoom; }
+  function markCurrent(){
+    if (navLock) { return; }
+    // 橫向捲動不改頁碼：scrollTop 沒變就跳過
+    var st = main.scrollTop;
+    if (st === lastScrollTop) { return; }
+    lastScrollTop = st;
+    // 取視窗中心落在哪一頁（不是露出最多的那一頁）：
+    // 縮放錨點就是把內容點捲回視窗中心，中心頁＝錨點頁，縮小才不會漂回上一頁。
+    // 視窗中心是放大後的座標，要除以有效倍率換回底座標再找頁
+    var ez = effZoom();
+    var cy = (st + main.clientHeight / 2) / ez;
+    var cx = (main.scrollLeft + main.clientWidth / 2) / ez;
+    var a = anchorAt(cx, cy);
+    var best = a.page;
+    if (best !== curPage) {
+      curPage = best;
+      updateCurrentUI();
+    }
+  }
+  // v53：只在電腦上用（手機目錄是抽屜，平時不顯示）。把欄目捲到亮著的那條；
+  // 'nearest' 表示已經看得見就不動，只在亮的那條換了時捲一次，不跟使用者自己捲欄目搶。
+  // v56：亮的那條如果收在欄目裡看不見，就捲到欄目那條，保證看得見的亮條在視野裡。
+  var lastTocActive = null;
+  var lastTocGroup = null;
+  function scrollTocToActive(){
+    if (window.innerWidth <= 700) { return; }
+    var target = lastTocActive;
+    if (target && target.offsetParent === null && lastTocGroup) { target = lastTocGroup; }
+    if (target && typeof target.scrollIntoView === 'function') {
+      target.scrollIntoView({ block: 'nearest' });
+    }
+  }
+  // 找某一條所屬的最外層欄目（那一組的 div）
+  function tocGroupOf(a){
+    var g = a.closest('.qx-toc-group');
+    while (g) {
+      var outer = g.parentElement ? g.parentElement.closest('.qx-toc-group') : null;
+      if (!outer) { return g; }
+      g = outer;
+    }
+    return null;
+  }
+  // 那一組的欄目那條（第一行的連結；沒有頁碼時是 span）
+  function tocCatLink(g){
+    if (!g) { return null; }
+    var row = g.firstElementChild;
+    if (!row) { return null; }
+    return row.querySelector('a, span');
+  }
+  function updateCurrentUI(){
+    // 當前頁顯示印刷頁碼（label），總數顯示 PDF 總頁數；頁碼那格可以直接改
+    pageInfo.value = displayPage(curPage);
+    pageTotal.textContent = ' / ' + numPages;
+    // v56：欄目＋文章兩層亮。取 data-page 最大且 <= curPage 的那一條
+    // （同頁父子取後面的子篇），再把那一條所屬的最外層欄目也亮起來；
+    // 欄目收著時文章那條雖然看不見，但亮的狀態還在，點開欄目就看見它已經亮了；
+    // 跨進下一個欄目，舊欄目的亮才換掉。
+    var active = null, bestPage = -1;
+    tocLinks.forEach(function(a){
+      var pg = parseInt(a.getAttribute('data-page'), 10);
+      if (pg <= curPage && pg >= bestPage) { active = a; bestPage = pg; }
+    });
+    var groupCat = active ? tocCatLink(tocGroupOf(active)) : null;
+    tocBox.querySelectorAll('.on').forEach(function(el){ el.classList.remove('on'); });
+    if (active) { active.classList.add('on'); }
+    if (groupCat && groupCat !== active) { groupCat.classList.add('on'); }
+    if (active !== lastTocActive || groupCat !== lastTocGroup) {
+      lastTocActive = active;
+      lastTocGroup = groupCat;
+      scrollTocToActive();
+    }
+  }
+  var raf = null;
+  main.addEventListener('scroll', function(){
+    if (raf) { return; }
+    raf = requestAnimationFrame(function(){ raf = null; markCurrent(); });
+  });
+  function gotoPage(n){
+    if (n < 1) { n = 1; }
+    if (n > numPages) { n = numPages; }
+    curPage = n;
+    lockNav();
+    var div = pageDivs[n - 1];
+
+    if (div) { main.scrollTop = div.offsetTop * zoom - 16; }
+
+    // v60：先捲過去再畫——畫哪一塊要看捲動位置，沒捲過去之前那頁不在視窗裡、算不出區域；
+    // 原來先畫後捲，跳過去那頁永遠是空白
+    renderPage(n);
+    if (n > 1) { renderPage(n - 1); }
+    if (n < numPages) { renderPage(n + 1); }
+    updateCurrentUI();
+  }
+  // v58：上一頁/下一頁兩個箭頭拿掉了（沒人點，翻頁用鍵盤 PageUp/PageDown 或拉捲軸）。
+  // v56 跳頁：工具列上當前頁那格直接改數字，按 Enter 就跳過去（印在頁面上的頁碼）；
+  // 沒有這個號的頁（例如春季刊印的頁碼跳過 3 號）就不跳，顯示回到當前頁；
+  // 打了字沒按 Enter 就往下捲，捲到別頁時顯示也跟著回到當前頁。
+  function jumpToLabel(){
+    var t = pageInfo.value.trim();
+    if (!t) { pageInfo.value = displayPage(curPage); return; }
+    for (var i = 0; i < numPages; i++) {
+      if (displayPage(i + 1) === t) { gotoPage(i + 1); return; }
+    }
+    pageInfo.value = displayPage(curPage);
+  }
+  pageInfo.addEventListener('keydown', function(e){ if (e.key === 'Enter') { jumpToLabel(); } });
+  pageInfo.addEventListener('focus', function(){ pageInfo.select(); });
+  pageInfo.addEventListener('blur', function(){ pageInfo.value = displayPage(curPage); });
+  // 縮放用固定檔位，100% 永遠回得去（×1.25 連乘會漂掉，98% 跳 122%）
+  var ZOOM_STEPS = [0.5, 0.625, 0.8, 1, 1.25, 1.5625, 2, 2.5, 3, 4, 5, 6.25, 8];
+  /* v52：閱讀器左邊框拿掉（只留上/右/下），頁面陰影拿掉。左邊本來三條豎線擠在一起
+     （目錄欄右邊框＋閱讀器左邊框＋頁面陰影邊），她說最多兩條；拿掉後只剩目錄欄右邊框
+     ＋頁面左邊，100% 時頁面白邊直接貼著閱讀器邊框。 */
+  // v60：局部放大後 800% 也只畫一小塊，不會撐爆記憶體，上限放開到 8 倍
+  function maxZoom(){ return 8; }
+  // 由底座標（除以 zoom 後的內容位置）找出那一頁、頁內幾分之幾；
+  // offsetTop/offsetHeight 是底尺寸（transform 不影響），所以直接比
+  function anchorAt(cx, cy){
+    var a = {page: curPage, fracX: 0.5, fracY: 0};
+    for (var i = 0; i < pageDivs.length; i++) {
+      var d = pageDivs[i];
+      var top = d.offsetTop, bottom = top + d.offsetHeight;
+      if (cy >= top && cy < bottom) {
+        a.page = i + 1;
+        a.fracY = d.offsetHeight ? (cy - top) / d.offsetHeight : 0;
+        a.fracX = d.offsetWidth ? (cx - d.offsetLeft) / d.offsetWidth : 0.5;
+        return a;
+      }
+      if (cy < top) { a.page = i + 1; a.fracY = 0; a.fracX = 0.5; return a; }
+      if (i === pageDivs.length - 1) { a.page = i + 1; a.fracY = 1; a.fracX = 0.5; }
+    }
+    return a;
+  }
+  var pinchAnchor = null; // 捏合點（touchstart 先記好），setZoom 用一次就清掉
+  function setZoom(z){
+    // v40：放大只換 transform＋spacer，不動頁面寬度、不重新排版，所以不 refresh。
+    // 錨點：捏合就用捏合點（底座標），加減鈕就用視窗中心；換完把同一個底座標點
+    // 捲回原來的視窗位置（底座標 × 新 zoom − 視窗位置），像 Safari 那樣穩住不跳頁。
+    var anchor, tx, ty;
+    if (pinchAnchor) {
+      anchor = pinchAnchor;
+      pinchAnchor = null;
+      var mr = main.getBoundingClientRect();
+      tx = anchor.clientX - mr.left;
+      ty = anchor.clientY - mr.top;
+    } else {
+      var cx = (main.scrollLeft + main.clientWidth / 2) / zoom;
+      var cy = (main.scrollTop + main.clientHeight / 2) / zoom;
+      anchor = anchorAt(cx, cy);
+      tx = main.clientWidth / 2;
+      ty = main.clientHeight / 2;
+    }
+    var anchorPage = anchor.page, fracX = anchor.fracX, fracY = anchor.fracY;
+    var stayPage = anchorPage;
+    zoom = Math.min(maxZoom(), Math.max(0.5, z));
+    zoomInfo.textContent = Math.round(zoom * 100) + '%';
+    var wasRendered = Object.keys(rendered).map(function(k){ return parseInt(k, 10); });
+    clearRendered();
+    // 顯示立刻放大（GPU transform，不等重畫），捲動範圍跟著對上
+    applyZoomTransform();
+    // v50：放大到 200% 以上時，只重畫正在看的那一頁和上下一頁，其他頁
+    // 等捲到才由 IntersectionObserver 畫。一次重畫 5 張 400% 的大圖，
+    // 來回幾次就把手機記憶體撐爆黑屏（她手機上 400% 來回捏幾次就重載）。
+    // 100% 時照舊全畫。
+    var toRender = wasRendered;
+    if (zoom >= 2) {
+      toRender = wasRendered.filter(function(n){ return Math.abs(n - anchorPage) <= 1; });
+      if (toRender.indexOf(anchorPage) < 0) { toRender.push(anchorPage); }
+    }
+    toRender.forEach(function(n){ renderPage(n); });
+    lockNav();
+    // 底座標點 × 新 zoom 就是它在放大後的位置，把它捲回視窗原位
+    var d2 = pageDivs[anchorPage - 1];
+    if (d2 && d2.offsetHeight) {
+      var nx = (d2.offsetLeft + fracX * d2.offsetWidth) * zoom;
+      var ny = (d2.offsetTop + fracY * d2.offsetHeight) * zoom;
+      main.scrollLeft = Math.max(0, nx - tx);
+      main.scrollTop = Math.max(0, ny - ty);
+      lastScrollTop = main.scrollTop;
+      curPage = anchorPage;
+      updateCurrentUI();
+    } else {
+      gotoPage(stayPage);
+    }
+  }
+  function zoomStep(dir){
+    var idx = 0, best = Infinity;
+    ZOOM_STEPS.forEach(function(s, i){
+      var d = Math.abs(s - zoom);
+      if (d < best) { best = d; idx = i; }
+    });
+    var next = idx + dir;
+    if (next < 0) { next = 0; }
+    if (next >= ZOOM_STEPS.length) { next = ZOOM_STEPS.length - 1; }
+    while (ZOOM_STEPS[next] > maxZoom() && next > 0) { next--; }
+    // 已經在頂（400% 再點＋）或到底（50% 再點－）：倍率不變就什麼都不做，
+    // 別再整頁重畫重捲，免得畫面跳一下、看起來像整個 page 縮小了
+    if (ZOOM_STEPS[next] === zoom) { return; }
+    setZoom(ZOOM_STEPS[next]);
+  }
+  document.getElementById('qxpdfZoomIn').addEventListener('click', function(){ zoomStep(1); });
+  document.getElementById('qxpdfZoomOut').addEventListener('click', function(){ zoomStep(-1); });
+  // 手機雙指捏合縮放：捏的時候只用 CSS 放大已畫好的頁面（GPU 即時順滑，不重畫）；
+  // 手指放開才貼到最近檔位、重畫一次。跟手機原生 PDF 一樣：先順順放大、放開再變清楚。
+  var pinchStartDist = 0, pinchStartZoom = 1, pinching = false, pinchZoom = 1;
+  var lastPinchEndTime = 0; // 最近一次捏合鬆手的時間；目錄頁整頁都是鏈接，捏合時手指一碰鏈接就可能誤觸跳頁，鬆手後 500ms 內的點按一律不跳
+  function pinchDist(t){
+    var dx = t[0].clientX - t[1].clientX;
+    var dy = t[0].clientY - t[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  main.addEventListener('touchstart', function(e){
+    if (e.touches.length === 2) {
+      pinching = true;
+      pinchStartDist = pinchDist(e.touches);
+      pinchStartZoom = zoom;
+      pinchZoom = zoom;
+      // v42：原點改回兩指中點（v40 的做法）。v41 原點固定 (0,0) 改用捲動錨定，
+      // 手機實測捏目錄時內容從左邊展開、放完跳去右邊——手指下的點沒定住。
+      // 原點在手指下，捏的過程那個點在螢幕上不動，才像 Safari。
+      // v40 鬆手閃頁的真兇是頁面 div 被舊圖撐高（v41 已修成圖絕對定位、高度不動），
+      // 現在原點改回來，鬆手錨點不會再找錯頁。
+      var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      var my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      var mr = main.getBoundingClientRect();
+      var pcx = (main.scrollLeft + (mx - mr.left)) / zoom;
+      var pcy = (main.scrollTop + (my - mr.top)) / zoom;
+      // v49：這裡不再改 transformOrigin。v46 起捏的過程不改 transform，
+      // 但這句還在，兩指一碰就把已放大的畫面換了中心點、整個抖一下跳走——
+      // 100% 時倍率是 1 沒感覺，超過 100% 才跳，這就是她影片裡的現象。
+      // 中心點永遠是 (0,0)，鬆手由 setZoom 用捲動定住捏合點。
+      // 記住捏合點在內容裡的位置（底座標）；鬆手縮放後，把同一個點捲回兩指中點，不跳頁
+      var a = anchorAt(pcx, pcy);
+      a.clientX = mx; a.clientY = my;
+      pinchAnchor = a;
+      // v47：兩指一碰就攔住 Safari，別讓它在那一瞬間自己捲走畫面。
+      // 之前這裡是 passive:true，攔不住，Safari 在第二指落下的那一刻就先
+      // 把畫面捲走了——這就是手機上一碰就跳頁的真兇。單指不攔，照常捲動。
+      e.preventDefault();
+    }
+  }, {passive:false});
+  // v46：捏的過程畫面完全不動（不改 transform），只記手指距離、只改上面
+  // 的百分比。鬆手那一下才一次跳到最近檔位、定在手指那個地方。
+  // v32–v45 捏的過程一直改 transform，真手機上就是抖到別頁去，
+  // 實驗室的合成捏合太順測不出來。與其一直修抖，不如捏的時候不動。
+  main.addEventListener('touchmove', function(e){
+    if (!pinching || e.touches.length !== 2) return;
+    e.preventDefault();
+    var d = pinchDist(e.touches);
+    if (pinchStartDist > 0) {
+      pinchZoom = Math.min(maxZoom(), Math.max(0.5, pinchStartZoom * d / pinchStartDist));
+      zoomInfo.textContent = Math.round(pinchZoom * 100) + '%';
+    }
+  }, {passive:false});
+  function pinchEnd(e){
+    if (!pinching) return;
+    if (e.touches.length < 2) {
+      pinching = false;
+      lastPinchEndTime = Date.now();
+      // v46：鬆手：貼到離 pinchZoom 最近的檔位，一次套上去（setZoom 會改
+      // transform、重畫、定在捏合點）。不能走 zoomStep(0)，它在倍率剛好是
+      // 檔位時會直接 return、transform 永遠套不上去——實驗室抓到的 bug。
+      var best = ZOOM_STEPS[0], bestD = Infinity;
+      ZOOM_STEPS.forEach(function(s){
+        var d = Math.abs(s - pinchZoom);
+        if (d < bestD) { bestD = d; best = s; }
+      });
+      while (best > maxZoom()) {
+        var bi = ZOOM_STEPS.indexOf(best);
+        if (bi <= 0) break;
+        best = ZOOM_STEPS[bi - 1];
+      }
+      setZoom(best);
+    }
+  }
+  main.addEventListener('touchend', pinchEnd);
+  main.addEventListener('touchcancel', pinchEnd);
+  var resizeTimer = null;
+  // 主欄寬變了（視窗變了、目錄開合、手機轉向、Safari 地址欄收放）：底寬跟著變，
+  // 記住視窗中心的內容點（底座標），重排後捲回原位，不要跳回頁頂
+  function refitOnWidthChange(){
+    // v59：本來就在最頂上（看封面）時，重算後留在 0，不要往下捲——封面頂不動、只變寬。
+    // 不然錨點會把視窗中心拉回原位，封面頂被捲上去幾十 px，看起來就是跳一下。
+    var wasAtTop = main.scrollTop <= 1;
+    var cx = (main.scrollLeft + main.clientWidth / 2) / zoom;
+    var cy = (main.scrollTop + main.clientHeight / 2) / zoom;
+    var anchor = anchorAt(cx, cy);
+    var wasRendered = Object.keys(rendered).map(function(k){ return parseInt(k, 10); });
+    clearRendered();
+    updatePageWidths(); // 底寬變了，頁面 div 跟著變寬（高按 aspect-ratio 跟著對）
+    applyZoomTransform();
+    // v50：同上，放大到 200% 以上時只重畫正在看的那一頁和上下一頁。
+    var toRender2 = wasRendered;
+    if (zoom >= 2) {
+      toRender2 = wasRendered.filter(function(n){ return Math.abs(n - anchor.page) <= 1; });
+      if (toRender2.indexOf(anchor.page) < 0) { toRender2.push(anchor.page); }
+    }
+    toRender2.forEach(function(n){ renderPage(n); });
+    var d2 = pageDivs[anchor.page - 1];
+    if (d2 && d2.offsetHeight) {
+      var nx = (d2.offsetLeft + anchor.fracX * d2.offsetWidth) * zoom;
+      var ny = (d2.offsetTop + anchor.fracY * d2.offsetHeight) * zoom;
+      main.scrollLeft = Math.max(0, nx - main.clientWidth / 2);
+      main.scrollTop = wasAtTop ? 0 : Math.max(0, ny - main.clientHeight / 2);
+      lastScrollTop = main.scrollTop;
+      curPage = anchor.page;
+      updateCurrentUI();
+    }
+  }
+  window.addEventListener('resize', function(){
+    if (resizeTimer) { clearTimeout(resizeTimer); }
+    resizeTimer = setTimeout(refitOnWidthChange, 200);
+  });
+  function destToPage(dest){
+    return Promise.resolve().then(function(){
+      if (!dest) { return null; }
+      var p = (typeof dest === 'string') ? pdfDoc.getDestination(dest) : Promise.resolve(dest);
+      return p.then(function(d){
+        if (!d || !d[0]) { return null; }
+        return pdfDoc.getPageIndex(d[0]);
+      }).then(function(idx){
+        return (idx === null || idx === undefined) ? null : idx + 1;
+      });
+    }).catch(function(){ return null; });
+  }
+  // v56：目錄按欄目收合。書籤本來就是一棵樹（欄目是上層、文章是下層）：
+  // 有下層的做成一組，預設收起只顯示欄目，箭頭點一下才展開看文章；
+  // 點欄目名字是跳到那一頁（開合狀態不動），只有箭頭管開合。
+  function buildToc(items, level){
+    var frag = document.createDocumentFragment();
+    var jobs = items.map(function(it){
+      return destToPage(it.dest).then(function(pg){
+        var el;
+        if (pg) {
+          el = document.createElement('a');
+          el.href = 'javascript:void(0)';
+          el.textContent = it.title;
+          el.setAttribute('data-page', pg);
+          if (level > 0) { el.className = 'lvl' + level; }
+          el.addEventListener('click', function(ev){
+            ev.preventDefault();
+            gotoPage(pg);
+            if (window.innerWidth <= 700) { setSide(false); }
+          });
+          tocLinks.push(el);
+        } else {
+          el = document.createElement('span');
+          el.textContent = it.title;
+          if (level > 0) { el.className = 'lvl' + level; }
+        }
+        var wrap = document.createElement('div');
+        if (it.items && it.items.length) {
+          wrap.className = 'qx-toc-group';
+          var row = document.createElement('div');
+          row.className = 'qx-toc-row';
+          var arrow = document.createElement('button');
+          arrow.type = 'button';
+          arrow.className = 'qx-toc-arrow';
+          arrow.setAttribute('aria-expanded', 'false');
+          arrow.setAttribute('aria-label', '展開');
+          arrow.textContent = '▶';
+          var kids = document.createElement('div');
+          kids.className = 'qx-toc-children';
+          kids.hidden = true;
+          arrow.addEventListener('click', function(){
+            var open = kids.hidden;
+            kids.hidden = !open;
+            arrow.setAttribute('aria-expanded', String(open));
+            arrow.classList.toggle('open', open);
+          });
+          row.appendChild(arrow);
+          row.appendChild(el);
+          wrap.appendChild(row);
+          return buildToc(it.items, level + 1).then(function(childFrag){
+            kids.appendChild(childFrag);
+            wrap.appendChild(kids);
+            return wrap;
+          });
+        }
+        wrap.appendChild(el);
+        return wrap;
+      });
+    });
+    return Promise.all(jobs).then(function(wraps){
+      wraps.forEach(function(w){ frag.appendChild(w); });
+      return frag;
+    });
+  }
+  function loadOutline(doc){
+    doc.getOutline().then(function(outline){
+      if (!outline || !outline.length) {
+        tocBox.textContent = '本期 PDF 没有目录书签。';
+        return null;
+      }
+      return buildToc(outline, 0);
+    }).then(function(frag){
+      if (!frag) { return; }
+      tocBox.innerHTML = '';
+      tocBox.appendChild(frag);
+    }).catch(function(){
+      tocBox.textContent = '本期 PDF 没有目录书签。';
+    });
+  }
+  // 瀏覽器端動態去頁（測試用，和 Cloudflare Function 同一邏輯）：
+  // 設定 window.QX_REMOVE_PAGES = [8,9,10] 或網址加 ?remove=8,9,10，
+  // 先用 pdf-lib 把那幾頁去掉，再把剩下的交給 PDF.js 顯示。
+  // 正式站不設這個，由 /api/reader-pdf 那邊去頁。
+  // 去頁後必須重建 /PageLabels，否則 pdf-lib 會讓剩下的頁碼全錯位。
+  function getRemovePages(){
+    if (window.QX_REMOVE_PAGES && window.QX_REMOVE_PAGES.length) {
+      return window.QX_REMOVE_PAGES.slice();
+    }
+    var r = params.get('remove');
+    if (r) {
+      return r.split(',').map(function(s){ return parseInt(s, 10); }).filter(function(n){ return n > 0; });
+    }
+    return null;
+  }
+  function loadPdfLib(){
+    return new Promise(function(resolve, reject){
+      if (window.PDFLib) { resolve(window.PDFLib); return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+      s.onload = function(){ resolve(window.PDFLib); };
+      s.onerror = function(){ reject(new Error('pdf-lib 載入失敗')); };
+      document.head.appendChild(s);
+    });
+  }
+  // 只用 pdf-lib 低層 API 讀原 /PageLabels，算出每頁印刷標籤
+  function readPageLabels(doc){
+    var ctx = doc.context;
+    var PDFName = window.PDFLib.PDFName;
+    var numPages = doc.getPageCount();
+    var labels = [];
+    for (var i = 0; i < numPages; i++) { labels.push(String(i + 1)); }
+    var plRef = doc.catalog.get(PDFName.of('PageLabels'));
+    if (!plRef) { return labels; }
+    var pl = ctx.lookup(plRef);
+    if (!pl || !pl.get) { return labels; }
+    var numsRef = pl.get(PDFName.of('Nums'));
+    if (!numsRef) { return labels; }
+    var nums = ctx.lookup(numsRef);
+    if (!nums || !nums.asArray) { return labels; }
+    var arr = nums.asArray();
+    for (var k = 0; k + 1 < arr.length; k += 2) {
+      var idxObj = ctx.lookup(arr[k]);
+      var dictObj = ctx.lookup(arr[k + 1]);
+      if (!idxObj || !dictObj || !dictObj.get) { continue; }
+      var startIdx = idxObj.asNumber ? idxObj.asNumber() : Number(idxObj);
+      var style = dictObj.get(PDFName.of('S'));
+      var stObj = dictObj.get(PDFName.of('St'));
+      var st = stObj ? (stObj.asNumber ? stObj.asNumber() : Number(stObj)) : 1;
+      var nextIdx = numPages;
+      if (k + 2 < arr.length) {
+        var nxt = ctx.lookup(arr[k + 2]);
+        if (nxt && nxt.asNumber) { nextIdx = nxt.asNumber(); }
+      }
+      var isDecimal = String(style) === '/D';
+      for (var i2 = startIdx; i2 < nextIdx && i2 < numPages; i2++) {
+        labels[i2] = isDecimal ? String(st + (i2 - startIdx)) : String(i2 + 1);
+      }
+    }
+    return labels;
+  }
+  // 依剩餘頁的原始印刷標籤重建 /PageLabels（連續遞增的併成一段）
+  function rebuildPageLabels(doc, remainingLabels){
+    var ctx = doc.context;
+    var PDFName = window.PDFLib.PDFName;
+    var PDFNumber = window.PDFLib.PDFNumber;
+    var PDFDict = window.PDFLib.PDFDict;
+    var PDFArray = window.PDFLib.PDFArray;
+    var nums = PDFArray.withContext(ctx);
+    for (var i = 0; i < remainingLabels.length; i++) {
+      var cur = parseInt(remainingLabels[i], 10);
+      if (isNaN(cur)) { continue; }
+      var prev = i > 0 ? parseInt(remainingLabels[i - 1], 10) : NaN;
+      if (i === 0 || isNaN(prev) || cur !== prev + 1) {
+        var dict = PDFDict.withContext(ctx);
+        dict.set(PDFName.of('S'), PDFName.of('D'));
+        dict.set(PDFName.of('St'), PDFNumber.of(cur));
+        nums.push(PDFNumber.of(i));
+        nums.push(dict);
+      }
+    }
+    var pl = PDFDict.withContext(ctx);
+    pl.set(PDFName.of('Nums'), nums);
+    doc.catalog.set(PDFName.of('PageLabels'), pl);
+  }
+  function fetchAndRemove(url, removePages){
+    return fetch(url).then(function(resp){
+      if (!resp.ok) { throw new Error('PDF 下載失敗 HTTP ' + resp.status); }
+      return resp.arrayBuffer();
+    }).then(function(buf){
+      return loadPdfLib().then(function(PDFLib){
+        return PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }).then(function(doc){
+          var origLabels = readPageLabels(doc);
+          var removeSet = {};
+          removePages.forEach(function(p){ removeSet[p] = true; });
+          var remainingLabels = origLabels.filter(function(_, i){ return !removeSet[i + 1]; });
+          var sorted = removePages.slice().sort(function(a, b){ return b - a; });
+          sorted.forEach(function(p){ if (p >= 1 && p <= doc.getPageCount()) { doc.removePage(p - 1); } });
+          rebuildPageLabels(doc, remainingLabels);
+          return doc.save();
+        });
+      });
+    }).then(function(bytes){
+      return pdfjsLib.getDocument({data: bytes}).promise;
+    });
+  }
+  var removePages = getRemovePages();
+  var docPromise = removePages
+    ? fetchAndRemove(fileUrl, removePages)
+    : pdfjsLib.getDocument({url: fileUrl}).promise;
+  docPromise.then(function(doc){
+    pdfDoc = doc;
+    numPages = doc.numPages;
+    statusBox.style.display = 'none';
+    pageInfo.textContent = '1 / ' + numPages;
+    // 取印刷頁碼（page label），取到後重寫工具列
+    if (doc.getPageLabels) {
+      doc.getPageLabels().then(function(labels){
+        if (labels && labels.length === numPages) {
+          pageLabels = labels;
+          updateCurrentUI();
+        }
+      }).catch(function(){});
+    }
+    return doc.getPage(1);
+  }).then(function(page1){
+    var vp1 = page1.getViewport({scale: 1});
+    vp1W = vp1.width; vp1H = vp1.height;
+    var aspect = vp1W + ' / ' + vp1H;
+    for (var i = 1; i <= numPages; i++) {
+      var div = document.createElement('div');
+      div.className = 'qxpdf-page';
+      div.setAttribute('data-page', i);
+      div.style.aspectRatio = aspect;
+      div.style.width = basePageWidth() + 'px';
+      pagesBox.appendChild(div);
+      pageDivs.push(div);
+      io.observe(div);
+    }
+    applyZoomTransform();
+    renderPage(1);
+    loadOutline(pdfDoc);
+  }).catch(function(err){
+    var msg = '打不开这个 PDF。';
+    if (err && ('' + err.message).indexOf('CORS') >= 0) {
+      msg = '打不开这个 PDF，可能是跨域（CORS）问题。';
+    }
+    fail(msg);
+    tocBox.textContent = '目录没能载入。';
+  });
+})();
+</script>
+{{ end }}
