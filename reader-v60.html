@@ -93,7 +93,7 @@
   </span>
   <span class="qxpdf-bar-right"></span>
 </div>
-<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v60">
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v60-sandbox">
   <aside class="qxpdf-side" id="qxpdfSide">
     <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
     <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
@@ -106,6 +106,7 @@
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>window.QX_REMOVE_PAGES = [8, 9, 10];</script>
 <script>
 (function(){
   var body = document.getElementById('qxpdfBody');
@@ -122,11 +123,11 @@
   var pageTotal = document.getElementById('qxpdfPageTotal');
   var zoomInfo = document.getElementById('qxpdfZoomInfo');
   var params = new URLSearchParams(window.location.search);
-  var issue = params.get('issue') || '2026-fall';
+  var issue = params.get('issue') || '2025-fall';
   var ISSUE_TITLES = {'2026-fall':'2026 秋季刊','2026-spring':'2026 春季刊','2025-fall':'2025 秋季刊'};
   var titleEl = document.getElementById('qxpdfTitle');
   if (titleEl) { titleEl.textContent = ISSUE_TITLES[issue] || issue; }
-  var fileUrl = '/api/reader-pdf?issue=' + encodeURIComponent(issue) + '&v=60';
+  var fileUrl = 'pdf/CCCA_Magazine_Perfect_Bookmarks_compressed.pdf';
   // 檢視器自己管捏合縮放：關掉 Safari 自己的整頁捏合，兩個同時跑會打架跳頁；
   // 只改檢視器這一頁的 viewport，不動全站。
   // 另外擋掉 Safari 的手勢事件（gesturestart）：它會把整頁（含工具列按鈕）一起放大，
