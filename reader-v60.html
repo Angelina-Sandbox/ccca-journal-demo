@@ -770,7 +770,7 @@
   </span>
   <span class="qxpdf-bar-right"></span>
 </div>
-<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v60-sandbox">
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v61-sandbox">
   <aside class="qxpdf-side" id="qxpdfSide">
     <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
     <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
@@ -941,6 +941,29 @@
     var rx = Math.max(0, Math.floor(x0)), ry = Math.max(0, Math.floor(y0));
     var rx1 = Math.min(bw, Math.ceil(x1)), ry1 = Math.min(bh, Math.ceil(y1));
     if (rx1 <= rx || ry1 <= ry) {return null; }
+    
+    
+    
+    var dprC = window.devicePixelRatio || 1, kC = zoom * dprC, maxSide = 4000;
+    var rwC = rx1 - rx, rhC = ry1 - ry;
+    if (rwC * kC > maxSide || rhC * kC > maxSide) {
+      var vx0 = Math.max(0, (main.scrollLeft - dx) / zoom), vx1 = Math.min(bw, (main.scrollLeft + main.clientWidth - dx) / zoom);
+      var vy0 = Math.max(0, main.scrollTop / zoom - div.offsetTop), vy1 = Math.min(bh, (main.scrollTop + main.clientHeight) / zoom - div.offsetTop);
+      var vwC = Math.max(1, vx1 - vx0), vhC = Math.max(1, vy1 - vy0);
+      var newRw = Math.max(vwC, Math.min(rwC, maxSide / kC));
+      var newRh = Math.max(vhC, Math.min(rhC, maxSide / kC));
+      var cxC = (vx0 + vx1) / 2, cyC = (vy0 + vy1) / 2;
+      rx = Math.max(0, Math.min(cxC - newRw / 2, bw - newRw));
+      if (rx > vx0) { rx = vx0; }
+      if (rx + newRw < vx1) { rx = vx1 - newRw; }
+      rx = Math.max(0, Math.min(rx, Math.max(0, bw - newRw)));
+      rx1 = rx + newRw;
+      ry = Math.max(0, Math.min(cyC - newRh / 2, bh - newRh));
+      if (ry > vy0) { ry = vy0; }
+      if (ry + newRh < vy1) { ry = vy1 - newRh; }
+      ry = Math.max(0, Math.min(ry, Math.max(0, bh - newRh)));
+      ry1 = ry + newRh;
+    }
 
     return {rx: rx, ry: ry, rw: rx1 - rx, rh: ry1 - ry};
   }
