@@ -770,7 +770,7 @@
   </span>
   <span class="qxpdf-bar-right"></span>
 </div>
-<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v61-sandbox">
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v63-sandbox">
   <aside class="qxpdf-side" id="qxpdfSide">
     <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
     <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
@@ -802,7 +802,12 @@
   var issue = params.get('issue') || '2025-fall';
   var ISSUE_TITLES = {'2026-fall':'2026 秋季刊','2026-spring':'2026 春季刊','2025-fall':'2025 秋季刊'};
   var titleEl = document.getElementById('qxpdfTitle');
-  if (titleEl) { titleEl.textContent = ISSUE_TITLES[issue] || issue; }
+  if (titleEl) {
+    
+    var verEl = document.getElementById('qxpdfBody');
+    var ver = verEl ? (verEl.getAttribute('data-qxpdf') || '').replace('reader-', '') : '';
+    titleEl.textContent = (ISSUE_TITLES[issue] || issue) + (ver ? ' · ' + ver : '');
+  }
   var fileUrl = 'pdf/CCCA_Magazine_Perfect_Bookmarks_compressed.pdf';
   
   
@@ -944,7 +949,7 @@
     
     
     
-    var dprC = window.devicePixelRatio || 1, kC = zoom * dprC, maxSide = 4000;
+    var dprC = window.devicePixelRatio || 1, kC = zoom * dprC, maxSide = 3000;
     var rwC = rx1 - rx, rhC = ry1 - ry;
     if (rwC * kC > maxSide || rhC * kC > maxSide) {
       var vx0 = Math.max(0, (main.scrollLeft - dx) / zoom), vx1 = Math.min(bw, (main.scrollLeft + main.clientWidth - dx) / zoom);
