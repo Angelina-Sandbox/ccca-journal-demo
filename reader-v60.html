@@ -687,6 +687,8 @@
 .qxpdf-bar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:0 0 10px;padding:10px 12px 0}
 .qxpdf-bar-left{display:flex;gap:10px;align-items:center;min-width:0}
 .qxpdf-title{font-size:14px;color:var(--brown);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ 
+.qxpdf-ver{position:fixed;right:8px;bottom:8px;font-size:11px;color:var(--muted);opacity:.75;z-index:60;pointer-events:none}
 .qxpdf-bar-center{display:flex;gap:28px;align-items:center}
 .qxpdf-bar-pages{display:flex;gap:8px;align-items:center}
 .qxpdf-bar-zoom{display:flex;gap:8px;align-items:center}
@@ -770,7 +772,7 @@
   </span>
   <span class="qxpdf-bar-right"></span>
 </div>
-<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v63-sandbox">
+<div class="qxpdf-body qxpdf-sideclosed" id="qxpdfBody" data-qxpdf="reader-v64-sandbox">
   <aside class="qxpdf-side" id="qxpdfSide">
     <div class="qxpdf-side-head"><span>目录</span><button type="button" id="qxpdfSideClose" aria-label="收起目录">✕</button></div>
     <div class="qxpdf-toc" id="qxpdfToc">正在载入目录…</div>
@@ -782,6 +784,7 @@
     <div id="qxpdfSpacer"></div>
   </div>
 </div>
+<div class="qxpdf-ver" id="qxpdfVer"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 (function(){
@@ -807,6 +810,9 @@
     var verEl = document.getElementById('qxpdfBody');
     var ver = verEl ? (verEl.getAttribute('data-qxpdf') || '').replace('reader-', '') : '';
     titleEl.textContent = (ISSUE_TITLES[issue] || issue) + (ver ? ' · ' + ver : '');
+    
+    var verBadge = document.getElementById('qxpdfVer');
+    if (verBadge && ver) { verBadge.textContent = ver; }
   }
   var fileUrl = 'pdf/CCCA_Magazine_Perfect_Bookmarks_compressed.pdf';
   
@@ -854,7 +860,7 @@
   
   var tileState = {};
   var rendering = {};
-  var TILE_MARGIN = 400;
+  var TILE_MARGIN = 200;
   var vp1W = 0, vp1H = 0;
   var pageLabels = null;
   
@@ -949,7 +955,7 @@
     
     
     
-    var dprC = window.devicePixelRatio || 1, kC = zoom * dprC, maxSide = 3000;
+    var dprC = window.devicePixelRatio || 1, kC = zoom * dprC, maxSide = 2048;
     var rwC = rx1 - rx, rhC = ry1 - ry;
     if (rwC * kC > maxSide || rhC * kC > maxSide) {
       var vx0 = Math.max(0, (main.scrollLeft - dx) / zoom), vx1 = Math.min(bw, (main.scrollLeft + main.clientWidth - dx) / zoom);
